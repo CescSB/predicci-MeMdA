@@ -8,4 +8,4 @@ Importing repository into Rstudio:
 - That should be it, if any doubts contact me
 
 
-Kaggle: https://www.kaggle.com/competitions/prediccion-de-la-perdida-de-clientes/team
+Kaggle: https://www.kaggle.com/competitions/prediccion-de-la-perdida-de-clientes/overview
