@@ -2,7 +2,7 @@
 title: "chimichanga"
 output: html_document
 ---
-## Hate nggers
+## hola
 
 
 ```{r}
