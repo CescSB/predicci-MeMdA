@@ -4,10 +4,17 @@ output: html_document
 ---
 ## hola
 
-
+lectura de les dades
 ```{r}
 train = read.csv("data/train.csv")
 test = read.csv("data/test.csv")
+
+
+
+(clases = sapply(train, class))
+#hascrcard / isactivemember / savingsaccountflag / exoited --> binaria / cat
+#CustomerSegment es categorica
+#
 
 
 ```
