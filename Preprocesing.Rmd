@@ -1,23 +1,53 @@
 ---
-title: "chimichanga"
+title: "Preprocesing"
 output: html_document
 ---
-## hola
 
-lectura de les dades
+
+## 1. Lectura de les dades:
+
 ```{r}
-train = read.csv("data/train.csv")
-test = read.csv("data/test.csv")
-
-
-
-(clases = sapply(train, class))
-#hascrcard / isactivemember / savingsaccountflag / exoited --> binaria / cat
-#CustomerSegment es categorica
-#
-
-
+data <- read.csv("~/CARRERA/4to/Minería de dades/Proyecto/train.csv")
 ```
+
+
+Mirem la tipología preestablerta de les diferents variables:
+
+```{r}
+(clases = sapply(data, class))
+```
+<br>
+
+Canviem a la tipología correcta les diferents variables o les eliminem:
+
+```{r}
+data$NumOfProducts <- as.factor(data$NumOfProducts)
+data$HasCrCard <- as.factor(data$HasCrCard)
+data$IsActiveMember <- as.factor(data$IsActiveMember)
+data$SavingsAccountFlag <- as.factor(data$SavingsAccountFlag)
+data$LoanStatus <- as.factor(data$LoanStatus)
+data$Gender <- as.factor(data$Gender)
+data$EducationLevel <- as.factor(data$EducationLevel)
+data$Geography <- as.factor(data$Geography)
+data$ComplaintsCount <- as.factor(data$ComplaintsCount)
+data$CustomerSegment <- as.factor(data$CustomerSegment)
+data$MaritalStatus <- as.factor(data$MaritalStatus)
+data$Exited <- as.factor(data$Exited)
+data <- data[,-1] #Eliminem la columna "X"
+(clases = sapply(data, class))
+```
+
+<br>
+
+Classifiquem les variables en dos grups per l'anàlisi exploratori univariant i bivariant:
+```{r}
+varNum <- names(clases)[which(clases %in% c("numeric", "integer"))]
+varCat <- names(clases)[which(clases %in% c("character", "factor"))]
+```
+<br>
+
+
+## 2. Anàlisi Exploratori 
 
 
 
