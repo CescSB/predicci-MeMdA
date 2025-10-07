@@ -2,13 +2,6 @@
 title: "vitoh"
 output: html_document
 ---
-
----
-title: "Preprocesing"
-output: html_document
----
-
-
 ## 1. Lectura de les dades:
 
 ```{r}
