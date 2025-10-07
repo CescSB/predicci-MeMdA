@@ -57,4 +57,4 @@ varCat <- names(clases)[which(clases %in% c("character", "factor"))]
 
 
 
-hola victor
+eeeeeeeeeey
