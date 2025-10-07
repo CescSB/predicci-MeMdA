@@ -7,7 +7,7 @@ output: html_document
 ## 1. Lectura de les dades:
 
 ```{r}
-data <- read.csv("~/CARRERA/4to/Minería de dades/Proyecto/train.csv")
+data <- read.csv("data/train.csv")
 ```
 
 
@@ -47,7 +47,9 @@ varCat <- names(clases)[which(clases %in% c("character", "factor"))]
 <br>
 
 
-## 2. Anàlisi Exploratori 
+## 2. Anàlisi Exploratori
+
+## 3. Detecció d'outliers
 
 
 
