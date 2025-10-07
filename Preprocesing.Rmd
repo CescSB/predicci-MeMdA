@@ -50,9 +50,12 @@ varCat <- names(clases)[which(clases %in% c("character", "factor"))]
 ## 2. Anàlisi Exploratori
 
 ## 3. Detecció d'outliers
-adi
-
-outlierhjhfaldyfhajdhfu
 
 
+
+
+
+
+
+hola victor
 
