@@ -53,7 +53,8 @@ varCat <- names(clases)[which(clases %in% c("character", "factor"))]
 
 
 
-el que no baile no come bicocho
+el que no baile no come bicoch
+
 
 
 
