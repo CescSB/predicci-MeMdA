@@ -53,7 +53,7 @@ varCat <- names(clases)[which(clases %in% c("character", "factor"))]
 
 
 
-git config --global user.name "ArnauDiRi"
-git config --global user.email "arnaudieguezribas@gmail.com"
+el que no baile no come bicocho
+
 
 
