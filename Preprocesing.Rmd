@@ -7,20 +7,29 @@ output: html_document
 ## 1. Lectura de les dades:
 
 ```{r}
+<<<<<<< HEAD
 datos <- read.csv("data/train.csv")
+=======
+data <- read.csv("data/train.csv")
+>>>>>>> 6cd8bfacc65d914b1037bff34ba466a628c7bef4
 ```
 
 
 Mirem la tipología preestablerta de les diferents variables:
 
 ```{r}
+<<<<<<< HEAD
 (clases = sapply(datos, class))
+=======
+(clases = sapply(data, class))
+>>>>>>> 6cd8bfacc65d914b1037bff34ba466a628c7bef4
 ```
 <br>
 
 Canviem a la tipología correcta les diferents variables o les eliminem:
 
 ```{r}
+<<<<<<< HEAD
 datos$NumOfProducts <- as.factor(datos$NumOfProducts)
 datos$HasCrCard <- as.factor(datos$HasCrCard)
 datos$IsActiveMember <- as.factor(datos$IsActiveMember)
@@ -35,22 +44,44 @@ datos$MaritalStatus <- as.factor(datos$MaritalStatus)
 datos$Exited <- as.factor(datos$Exited)
 datos <- datos[,-1] #Eliminem la columna "X"
 (clases = sapply(datos, class))
+=======
+data$NumOfProducts <- as.factor(data$NumOfProducts)
+data$HasCrCard <- as.factor(data$HasCrCard)
+data$IsActiveMember <- as.factor(data$IsActiveMember)
+data$SavingsAccountFlag <- as.factor(data$SavingsAccountFlag)
+data$LoanStatus <- as.factor(data$LoanStatus)
+data$Gender <- as.factor(data$Gender)
+data$EducationLevel <- as.factor(data$EducationLevel)
+data$Geography <- as.factor(data$Geography)
+data$ComplaintsCount <- as.factor(data$ComplaintsCount)
+data$CustomerSegment <- as.factor(data$CustomerSegment)
+data$MaritalStatus <- as.factor(data$MaritalStatus)
+data$Exited <- as.factor(data$Exited)
+data <- data[,-1] #Eliminem la columna "X"
+(clases = sapply(data, class))
+>>>>>>> 6cd8bfacc65d914b1037bff34ba466a628c7bef4
 ```
 
 <br>
 
 Classifiquem les variables en dos grups per l'anàlisi exploratori univariant i bivariant:
 ```{r}
+<<<<<<< HEAD
 (varNum <- names(clases)[which(clases %in% c("numeric", "integer"))])
 ```
 
 
 ```{r}
 (varCat <- names(clases)[which(clases %in% c("character", "factor"))])
+=======
+varNum <- names(clases)[which(clases %in% c("numeric", "integer"))]
+varCat <- names(clases)[which(clases %in% c("character", "factor"))]
+>>>>>>> 6cd8bfacc65d914b1037bff34ba466a628c7bef4
 ```
 <br>
 
 
+<<<<<<< HEAD
 ## 2.1 Anàlisi Exploratori Univariant
 
 ### 2.1.1 Variables Numèriques:
@@ -196,3 +227,17 @@ grid.arrange(grobs = plots, ncol = 3)
 
 
 
+=======
+## 2. Anàlisi Exploratori
+nopo
+
+## 3. Detecció d'outliers
+
+
+
+
+
+
+
+eeeeeeeeeey
+>>>>>>> 6cd8bfacc65d914b1037bff34ba466a628c7bef4

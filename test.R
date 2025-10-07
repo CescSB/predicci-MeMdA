@@ -193,3 +193,12 @@ grid.arrange(grobs = plots, ncol = 3)
 
 ```
 
+<<<<<<< HEAD
+=======
+b = c(1,2,3,4,5,6,7,8,9,1,2,3,4,5,6,7,8,9)
+plot(b)
+ patata <- 0
+ 
+ 
+ vitor <- "me gustan las pichulas negras muy grandes y por el culo"
+>>>>>>> 6cd8bfacc65d914b1037bff34ba466a628c7bef4
