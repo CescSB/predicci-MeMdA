@@ -57,4 +57,9 @@ varCat <- names(clases)[which(clases %in% c("character", "factor"))]
 
 
 
+<<<<<<< HEAD
 holaaa
+=======
+hola victor
+
+>>>>>>> e1d49ea037377b744a0409edcd8f69361b8ec250
