@@ -51,9 +51,7 @@ varCat <- names(clases)[which(clases %in% c("character", "factor"))]
 
 ## 3. Detecció d'outliers
 
-
-
-el que no baile no come bicocho
+outlierhjhfaldyfhajdhfu
 
 
 
