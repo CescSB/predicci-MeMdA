@@ -1,0 +1,474 @@
+---
+title: "Preprocessing"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+## 1. Lectura de les dades
+
+```{r include=FALSE}
+#datos <- read.csv("data/train.csv")
+#datos <- read.csv("train.csv")
+datos <- read.csv("~/CARRERA/4to/Minería de Dades/predicci-MeMdA/data/train.csv")
+```
+
+
+Mirem la tipología preestablerta de les diferents variables:
+
+```{r echo=FALSE}
+(clases = sapply(datos, class))
+```
+Canviem a la tipología correcta les diferents variables o les eliminem:
+
+```{r}
+datos$NumOfProducts <- as.factor(datos$NumOfProducts)
+datos$HasCrCard <- as.factor(datos$HasCrCard)
+datos$IsActiveMember <- as.factor(datos$IsActiveMember)
+datos$SavingsAccountFlag <- as.factor(datos$SavingsAccountFlag)
+datos$LoanStatus <- as.factor(datos$LoanStatus)
+datos$Gender <- as.factor(datos$Gender)
+datos$EducationLevel <- as.factor(datos$EducationLevel)
+datos$Geography <- as.factor(datos$Geography)
+datos$ComplaintsCount <- as.factor(datos$ComplaintsCount)
+datos$CustomerSegment <- as.factor(datos$CustomerSegment)
+datos$MaritalStatus <- as.factor(datos$MaritalStatus)
+datos$Exited <- as.factor(datos$Exited)
+datos <- datos[,-1] #Eliminem la columna "X"
+(clases = sapply(datos, class))
+```
+Classifiquem les variables en dos grups per l'anàlisi exploratori univariant i bivariant:
+```{r echo=FALSE}
+(varNum <- names(clases)[which(clases %in% c("numeric", "integer"))])
+```
+```{r echo=FALSE}
+(varCat <- names(clases)[which(clases %in% c("character", "factor"))])
+```
+
+## 2.1 Anàlisi Exploratori Univariant
+
+
+### 2.1.1 Variables Numèriques
+
+
+Aïllem les variables numèriques que realment són inútils per fer l'anàlisi exploratiu:
+```{r echo=FALSE}
+(varNum2 <- varNum[-8])
+```
+
+#### 2.1.1.1 Taula:
+
+```{r echo=FALSE}
+library(psych)
+psych::describe(datos[, varNum2])
+```
+
+
+#### 2.1.1.2  Gràfics
+
+```{r echo=FALSE}
+# ===== Gráficos variables numéricas (optimizado) =====
+
+vars_num <- varNum2   # vector de variables numéricas
+
+# Guardar configuración original de gráficos
+old_par <- par(no.readonly = TRUE)
+on.exit(par(old_par), add = TRUE)
+
+# Configuración general
+par(mfrow = c(2, 2), mar = c(4, 4, 3, 1))
+
+for (var in vars_num) {
+  x <- datos[[var]]
+  x <- x[is.finite(x)]
+  n <- length(x)
+
+  if (n == 0) next  # saltar si todo NA
+
+  # Cálculos básicos una sola vez
+  mu <- mean(x)
+  s <- stats::sd(x)
+  nb <- tryCatch(nclass.FD(x), error = function(e) 30)
+
+  ## --- HISTOGRAMA + DENSIDADES ---
+  h <- hist(x, breaks = nb, plot = FALSE)
+  y_lim <- c(0, max(h$counts) * 1.2)
+
+  plot(h, col = "#90CAF9", border = "white",
+       main = paste("Histograma variable", var),
+       xlab = var, ylab = "Frecuencia", ylim = y_lim)
+
+  # Añadir densidad y curva normal
+  den <- density(x, adjust = 1)
+  scale_factor <- diff(h$mids[1:2]) * n
+  lines(den$x, den$y * scale_factor, lwd = 2, col = "#1565C0")
+  lines(h$mids,
+        dnorm(h$mids, mean = mu, sd = s) * scale_factor,
+        lwd = 2, lty = 2, col = "#FF7043")
+
+  rug(x, col = "#455A6455")
+  legend("topright",
+         legend = c("Densidad", "Normal(μ,σ)"),
+         col = c("#1565C0", "#FF7043"),
+         lwd = 2, lty = c(1, 2), bty = "n", cex = 0.8)
+
+  ## --- BOXLOT PROFESIONAL ---
+  bx_range <- range(x, na.rm = TRUE)
+  plot.new()
+  plot.window(xlim = bx_range, ylim = c(0.5, 1.5))
+  abline(v = pretty(bx_range, 6), col = "#ECEFF1", lwd = 1)
+
+  boxplot(x, horizontal = TRUE, add = TRUE, at = 1,
+          col = "#A5D6A7", border = "#2E7D32",
+          notch = TRUE, outline = TRUE,
+          pch = 16, cex = 0.6, axes = FALSE, frame = FALSE)
+
+  points(mu, 1, pch = 23, cex = 1.1, bg = "#FF7043", col = "white")
+  axis(1)
+  title(main = paste("Boxplot variable", var), xlab = var, cex.main = 1)
+
+  legend("topleft",
+         legend = c("Mediana", "Media"),
+         pch = c(15, 23), pt.cex = c(1.2, 1.1),
+         col = c("#2E7D32", "#FF7043"),
+         bty = "n", cex = 0.8)
+}
+```
+
+### 2.1.2 Variables Categòriques
+
+Aïllem les variables numèriques que realment són inútils per fer l'anàlisi exploratiu:
+```{r echo=FALSE}
+(varCat2 <- varCat[-4])
+```
+
+#### 2.1.2.1 Taules:
+
+```{r}
+for (var in varCat2) {
+  tablaAbs <- data.frame(table(datos[, var]))
+  tablaFreq <- data.frame(table(datos[, var])/sum(table(datos[, var])))
+  m <- match(tablaAbs$Var1, tablaFreq$Var1)
+  tablaAbs[, "FreqRel"] <- tablaFreq[m, "Freq"]
+  colnames(tablaAbs) <- c("Categoria", "FreqAbs", "FreqRel")
+  
+  cat("===============", var, "===================================\n")
+  print(tablaAbs)
+  cat("==================================================\n")
+}
+```
+
+#### 2.1.2.2 Gràfics
+
+<br>
+<br>
+<br>
+
+```{r}
+library(ggplot2)
+library(gridExtra)
+
+plots <- list()   # lista vacía
+i <- 1            # índice
+
+for (var in varCat2) {
+  tabla <- data.frame(table(datos[, var]) / sum(table(datos[, var])))
+
+  p <- ggplot(data = tabla, aes(x = Var1, y = Freq)) +
+    geom_bar(stat = "identity", fill = "steelblue") +
+    geom_text(aes(label = paste0(round(Freq * 100, 2), "%")),
+              vjust = 1.6, color = "white", size = 3.5) +
+    theme_minimal() +
+    labs(title = paste("Dist.", var),
+         x = var,
+         y = "Proporción")
+
+  plots[[i]] <- p
+  i <- i + 1
+}
+
+# Mostrar todos los gráficos en un grid (ejemplo con 3 columnas)
+grid.arrange(grobs = plots, ncol = 3)
+```
+
+## 2.2 Anàlisi Bivariant
+
+
+### 2.2.1 Numèriques vs Numèriques 
+
+
+#### 2.2.1.1 Taula de correlacions
+
+```{r}
+cor(datos[, varNum2], use="complete.obs")
+```
+
+```{r}
+install.packages("ggcorrplot")
+library(ggcorrplot)
+corr <- round(cor(datos[, varNum2], use="complete.obs"), 1)
+ggcorrplot(corr, lab = T)
+```
+
+### 2.2.2 Numèriques vs Categòriques
+
+
+#### 2.2.2.1 Resum per categoríes
+
+```{r}
+for (varN in varNum2) {
+  for (varC in varCat2) {
+   print(psych::describeBy(datos[, varN], group = datos[, varC])) 
+  }
+}
+```
+
+
+#### 2.2.2.2 Gràfic 
+```{r}
+library(ggplot2)
+library(gridExtra)
+
+plots <- list()
+i <- 1
+
+for (varC in varCat2) {
+  for (varN in varNum2) {
+    
+    grafico <- ggplot(datos, aes(x = .data[[varN]], fill = .data[[varC]])) + 
+      geom_histogram(colour = "black",
+                     lwd = 0.75,
+                     linetype = 1,
+                     position = "identity",
+                     alpha = 0.5) +
+      labs(title = paste("Histograma de", varN, "por", varC),
+           x = varN, y = "Frecuencia", fill = varC) +
+      theme_minimal()
+    
+    plots[[i]] <- grafico
+    i <- i + 1
+  }
+}
+
+# Mostrar todos en un grid (2 columnas)
+grid.arrange(grobs = plots,ncol=2)
+```
+
+
+### 2.2.3 Categorical vs. categorical
+
+#### 2.2.3.1 Taules
+
+```{r}
+for (varc1 in varCat2) {
+  for (varc2 in varCat2) {
+    if (varc1 != varc2) {
+      prop_table <- prop.table(table(datos[, varc1], datos[, varc2]))
+      cat("=============", varc1, " vs. ", varc2, "=========================\n")
+      print(prop_table)
+    }
+  }
+}
+```
+
+#### 2.2.3.2 Gràfics
+
+```{r}
+# Configuración general de la ventana de gráficos
+par(mfrow = c(3, 3),            # cuadrícula de 3x3
+    mar = c(4, 4, 3, 1),        # márgenes más amplios
+    oma = c(0, 0, 2, 0),        # margen exterior (para título general)
+    las = 1,                    # etiquetas horizontales
+    cex.axis = 0.8,             # tamaño de ejes
+    cex.names = 0.8,            # tamaño de nombres en ejes
+    cex.main = 0.9)             # tamaño de títulos
+
+# Colores predefinidos (más suaves que rainbow)
+colores <- c("#4DBBD5", "#E64B35", "#00A087", "#3C5488", "#F39B7F")
+
+for (varc1 in varCat2) {
+  for (varc2 in varCat2) {
+    if (varc1 != varc2) {
+      # Tabla de proporciones cruzadas
+      prop_table <- prop.table(table(datos[[varc1]], datos[[varc2]]))
+      
+      # Crear gráfico
+      barplot(prop_table, beside = TRUE,
+              col = colores[seq_len(nrow(prop_table))],
+              border = "white",              # bordes blancos para contraste
+              ylim = c(0, max(prop_table) * 1.2),  # espacio superior
+              main = paste(varc1, "vs", varc2),    # título descriptivo
+              ylab = "Proporció",
+              xlab = varc2,
+              legend.text = TRUE,            # leyenda automática
+              args.legend = list(bty = "n", cex = 0.7, x = "topright")) # sin borde
+    }
+  }
+}
+
+# Título general de toda la figura
+mtext("Comparación de proporciones entre variables categóricas", 
+      outer = TRUE, cex = 1.2, font = 2)
+
+```
+
+## 3. Outliers
+
+Instal·lem els packages necessaris
+```{r}
+list.of.packages = c("EnvStats", "ggplot2", "outliers", "remotes", "scatterplot3d", 
+                     "readr", "rgl", "plotly", "mvoutlier", "MVN", "chemometrics", 
+                     "adamethods", "DMwR2", "dplyr", "Rlof", "R.matlab", "solitude", 
+                     "tidyverse", "MLmetrics","chemometrics") 
+
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages) > 0) {
+  install.packages(new.packages)
+}
+lapply(list.of.packages, require, character.only = T)
+rm(list.of.packages, new.packages)
+
+```
+
+### 3.1 Detecció Univariant
+Per tal de decidir quin mètode utilitzarem per a cadascuna de les variables a la hora de detectar outliers, calculem la Kurtosisi i Skewness per tal de saber si la distribució és simètrica i/o normal. Si aquesta és simètrica farem servir IQR ja que es basa en els quartils 1 i 3 funcionant millor d'aquesta manera en dades simètriques, si no ho és Hampel Identifier ja que es basa en la mediana i MAD que és més robust i si s'assembla a una distribució normal Z-Scores.
+```{r}
+library(e1071)
+
+resultats <- data.frame(
+  Variable = character(), 
+  Skewness = numeric(), 
+  Kurtosis = numeric(),
+  Simetria = character(),
+  Normal = character(),
+  Mètode = character(),
+  stringsAsFactors = FALSE
+)
+
+for (var in varNum2) {
+  x <- datos[[var]] 
+  skew <- skewness(x, na.rm = TRUE)
+  kurt <- kurtosis(x, na.rm = TRUE)
+  simetria <- ifelse(abs(skew) < 0.75, "Sí", "No")
+  normal <- ifelse(kurt >= 2.5 & kurt <= 3.5 & abs(skew) < 0.75, "Sí", "No")
+  metode <- ifelse(simetria == "No" & normal == "No", "Hampel Identifier",
+                   ifelse(normal == "Sí", "Z-Scores", "IQR"))
+  resultats <- rbind(resultats, data.frame(Variable = var, Skewness = skew, Kurtosis = kurt,
+                                           Simetria = simetria, Normal = normal, Mètode = metode))
+}
+
+print(resultats)
+
+varIQR <- c("Tenure", "NetPromoterScore","TransactionFrequency","EstimatedSalary","DigitalEngagementScore","CreditScore","Balance")
+varHampel <- c("Age","AvgTransactionAmount")
+```
+
+#### 3.1.1 Mínims i màxims de cadascuna de les variables
+```{r}
+invisible(mapply(function(x, name) {
+  cat("var. ", name, ": \n\t min: ", min(x, na.rm=TRUE), "\n\t max: ", max(x, na.rm=TRUE), "\n")
+}, datos[, varNum2], colnames(datos[, varNum2])))
+
+```
+
+#### 3.1.2 IQR
+```{r}
+if (!dir.exists("IQR")) {
+  dir.create("IQR")
+}
+
+outliers_IQR <- data.frame(Variable = character(), Num_Outliers = integer(), stringsAsFactors = FALSE)
+
+for (var in varIQR) {
+  x <- datos[[var]]
+  Q1 <- quantile(x, probs = 0.25, na.rm = TRUE)
+  Q3 <- quantile(x, probs = 0.75, na.rm = TRUE)
+  IQR_value <- Q3 - Q1
+  lower_bound <- Q1 - 1.5 * IQR_value
+  upper_bound <- Q3 + 1.5 * IQR_value
+  
+  num_outliers <- sum(x < lower_bound | x > upper_bound, na.rm = TRUE)
+  outliers_IQR <- rbind(outliers_IQR, data.frame(Variable = var, Num_Outliers = num_outliers))
+  
+  png(filename = paste0("IQR/", var, "_histograma.png"), width = 800, height = 600)
+  hist(x, breaks = 100, col = "skyblue", border = "black",
+       main = paste("Histograma de", var),
+       xlab = var, ylab = "Freqüència",
+       xlim = c(min(lower_bound, min(x, na.rm = TRUE)), max(upper_bound, max(x, na.rm = TRUE))))
+  abline(v = lower_bound, col = "red", lwd = 2, lty = 2)  
+  abline(v = upper_bound, col = "red", lwd = 2, lty = 2)  
+  dev.off()
+}
+
+outliers_IQR
+```
+
+#### 3.1.3 Hampel
+```{r}
+if (!dir.exists("Hampel")) {
+  dir.create("Hampel")
+}
+
+outliers_hampel <- data.frame(Variable = character(), Num_Outliers = integer(), stringsAsFactors = FALSE)
+
+for (var in varHampel) {
+  x <- datos[[var]]
+  mediana <- median(x, na.rm = TRUE)
+  mad_value <- mad(x, constant = 1, na.rm = TRUE)  
+  lower_bound <- mediana - 3 * mad_value
+  upper_bound <- mediana + 3 * mad_value
+  
+
+  num_outliers <- sum(x < lower_bound | x > upper_bound, na.rm = TRUE)
+  outliers_hampel <- rbind(outliers_hampel, data.frame(Variable = var, Num_Outliers = num_outliers))
+  
+  png(filename = paste0("Hampel/", var, "_hampel.png"), width = 800, height = 600)
+  hist(x, breaks = 100, col = "skyblue", border = "black",
+       main = paste("Histograma de", var),
+       xlab = var, ylab = "Freqüència",
+       xlim = c(min(lower_bound, min(x, na.rm = TRUE)), max(upper_bound, max(x, na.rm = TRUE))))
+  abline(v = lower_bound, col = "red", lwd = 2, lty = 2)  
+  abline(v = upper_bound, col = "red", lwd = 2, lty = 2)  
+  dev.off()
+}
+
+# Mostrar el dataframe amb els outliers
+outliers_hampel
+```
+
+### 3.2 Detecció Multivariant
+
+#### 3.2.1 Distància Mahalanobis
+```{r}
+m <- colMeans(datos[,varNum2])
+S <- cov(datos[,varNum2])
+md <- mahalanobis(datos[,varNum2], center = m, cov = S)
+llindar <- qchisq(0.99, df = ncol(datos[,varNum2]))
+posicions <- which(md > llindar)
+outlierMahalanobis <- seq_len(nrow(datos)) %in% posicions
+par(mfrow = c(1, 1))
+plot(md, pch = 1, col = ifelse(outlierMahalanobis, "red", "black"),
+    main = "Detecció Mahalanobis")
+abline(h = llindar, col = "red", lty = 2)
+which.max(dis$md)
+datos[which.max(dis$md),]
+pairs(datos[, varNum2],col = ifelse(outlierMahalanobis, "red", "black"),
+  pch = 1, main = "Detecció outliers Mahalanobis")
+sum(outlierMahalanobis)
+```
+
+#### 3.2.2 Local Outlier Factor (LOF)
+```{r}
+library(DMwR2)
+library(dplyr)
+
+outlierLOF <- lofactor(datos[, varNum2], k = 5)
+par(mfrow=c(1,1))
+plot(density(outlierLOF))
+posicions <- which(outlierLOF > quantile(outlierLOF, probs = 0.98))
+sort(outlierLOF[posicions], decreasing = T)
+outlierLOF <- outlierLOF > quantile(outlierLOF, probs = 0.98)
+pairs(datos[, varNum2], col = ifelse(outlierLOF, "red", "black"),
+  pch = 1, main = "Detecció outliers LOF")
+sum(outlierLOF)
+```
