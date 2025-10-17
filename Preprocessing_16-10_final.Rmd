@@ -8,7 +8,7 @@ output:
 ## 1. Lectura de les dades
 
 ```{r include=FALSE}
-datos <- read.csv("train.csv")
+datos <- read.csv("data/train.csv")
 ```
 
 
