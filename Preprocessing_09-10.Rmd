@@ -224,6 +224,114 @@ for (varN in varNum2) {
 ```
 
 
+
+## 3. Imputació dades
+Llibreries necessàries
+```{r}
+list.of.packages = c("mice","VIM","naniar","dplyr") 
+
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages) > 0) {
+  install.packages(new.packages)
+}
+lapply(list.of.packages, require, character.only = T)
+rm(list.of.packages, new.packages)
+```
+
+Existència de missings
+```{r}
+colSums(is.na(datos))
+```
+
+
+Conversió de les variables caracters a factor
+```{r}
+datos[ , varCat2] <- lapply(datos[ , varCat2, drop = FALSE], function(x){
+  if (is.character(x)) factor(x) else x
+})
+```
+
+Test Little (comprovació MCAR)
+```{r}
+try({
+  print(naniar::mcar_test(datos))
+}, silent = TRUE)
+```
+
+Patró de Na
+```{r}
+VIM::aggr(
+  datos, col = c("blue", "grey"),border= NA, numbers = TRUE, sortVars = TRUE,
+  labels = names(datos), cex.axis = 0.8, gap = 3, combined = TRUE, 
+  only.miss = FALSE, prop = TRUE, plot = TRUE, ylab = c("Dades mancants", "Patró de NA"))
+```
+
+MICE: Matriu predictora
+```{r}
+pred <- mice::make.predictorMatrix(datos)
+ids <- c("Surname", "ID")  
+pred[ , ids] <- 0  # que cap variable sigui imputada fent servir IDs
+pred[ids, ]  <- 0  # i que els IDs tampoc s'imputin
+```
+
+MICE: Mètode per la imputació
+```{r}
+meth <- mice::make.method(datos)
+meth[varNum2] <- "pmm"
+for(v in varCat2){
+  x <- datos[[v]]
+  if (is.factor(x) && nlevels(x) == 2) {
+    meth[v] <- "logreg"
+  } else if (is.ordered(x)) {
+    meth[v] <- "polr"
+  } else {
+    meth[v] <- "polyreg"
+  }
+}
+```
+
+
+MICE: Imputació
+```{r}
+set.seed(500)  # replicabilitat
+imp <- mice::mice(
+  data   = datos,
+  m      = 10,   
+  maxit  = 10,       
+  method = meth,
+  ridge = 1e-3,
+  predictorMatrix = pred,
+  printFlag = TRUE
+)
+
+```
+
+
+```{r}
+# Diagonsi imputacio
+#print(imp)
+#plot(imp)
+#stripplot(imp, pch = 20)   
+#densityplot(imp)
+```
+
+Dades Imputades
+```{r}
+dades <- mice::complete(imp, action = 1)
+```
+
+Comprovació de NA
+```{r}
+colSums(is.na(dades))
+```
+
+Guardar dataset
+```{r}
+saveRDS(imp, "dades.rds")
+write.csv(dades, "dades.csv", row.names = FALSE)
+```
+
+
 ## 3. Outliers
 
 Instal·lem els packages necessaris
