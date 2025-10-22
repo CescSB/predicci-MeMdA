@@ -315,6 +315,107 @@ mtext("Comparació de proporcions entre variables categòriques",
 
 ```
 
+
+## 3. Imputació dades
+Llibreries necessàries
+```{r}
+list.of.packages = c("mice","VIM","naniar","dplyr") 
+
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages) > 0) {
+  install.packages(new.packages)
+}
+lapply(list.of.packages, require, character.only = T)
+rm(list.of.packages, new.packages)
+```
+
+Existència de missings
+```{r}
+colSums(is.na(datos))
+```
+
+
+Conversió de les variables caracters a factor
+```{r}
+datos[ , varCat2] <- lapply(datos[ , varCat2, drop = FALSE], function(x){
+  if (is.character(x)) factor(x) else x
+})
+```
+
+Test Little (comprovació MCAR)
+```{r}
+try({
+  print(naniar::mcar_test(datos))
+}, silent = TRUE)
+```
+
+Patró de Na
+```{r}
+VIM::aggr(
+  datos, col = c("blue", "grey"),border= NA, numbers = TRUE, sortVars = TRUE,
+  labels = names(datos), cex.axis = 0.8, gap = 3, combined = TRUE, 
+  only.miss = FALSE, prop = TRUE, plot = TRUE, ylab = c("Dades mancants", "Patró de NA"))
+```
+
+MICE: Matriu predictora
+```{r}
+pred <- mice::make.predictorMatrix(datos)
+ids <- c("Surname", "ID")  
+pred[ , ids] <- 0  # que cap variable sigui imputada fent servir IDs
+pred[ids, ]  <- 0  # i que els IDs tampoc s'imputin
+```
+
+MICE: Mètode per la imputació
+```{r}
+meth <- mice::make.method(datos)
+meth[varNum2] <- "pmm"
+for(v in varCat2){
+  x <- datos[[v]]
+  if (is.factor(x) && nlevels(x) == 2) {
+    meth[v] <- "logreg"
+  } else if (is.ordered(x)) {
+    meth[v] <- "polr"
+  } else {
+    meth[v] <- "polyreg"
+  }
+}
+```
+
+
+MICE: Imputació
+```{r}
+# POTS EXECUTAR DIRECTAMENT LÍNIA 416 (ABANS DE COMENÇAR OUTLIERS) EN LA QUE ET BAIXES LES DADES JA IMPUTADES
+set.seed(500)  # replicabilitat
+imp <- mice::mice(
+  data   = datos,
+  m      = 10,   
+  maxit  = 10,       
+  method = meth,
+  ridge = 1e-3,
+  predictorMatrix = pred,
+  printFlag = TRUE
+)
+
+```
+
+
+Dades Imputades
+```{r}
+dades <- mice::complete(imp, action = 1)
+```
+
+Comprovació de NA
+```{r}
+colSums(is.na(dades))
+```
+
+Guardar dataset
+```{r}
+saveRDS(imp, "dades.rds")
+write.csv(dades, "dades.csv", row.names = FALSE)
+dades <- read.csv("dades.csv")
+```
+
 ## 3. Outliers
 
 Instal·lem els packages necessaris
@@ -349,7 +450,7 @@ resultats <- data.frame(
 )
 
 for (var in varNum2) {
-  x <- datos[[var]] 
+  x <- dades[[var]] 
   skew <- skewness(x, na.rm = TRUE)
   kurt <- kurtosis(x, na.rm = TRUE)
   simetria <- ifelse(abs(skew) < 0.75, "Sí", "No")
@@ -364,13 +465,14 @@ print(resultats)
 
 varIQR <- c("Tenure", "NetPromoterScore","TransactionFrequency","EstimatedSalary","DigitalEngagementScore","CreditScore","Balance")
 varHampel <- c("Age","AvgTransactionAmount")
+rm(kurt, metode, normal, simetria, skew, var, x)
 ```
 
 #### 3.1.1 Mínims i màxims de cadascuna de les variables
 ```{r}
 invisible(mapply(function(x, name) {
   cat("var. ", name, ": \n\t min: ", min(x, na.rm=TRUE), "\n\t max: ", max(x, na.rm=TRUE), "\n")
-}, datos[, varNum2], colnames(datos[, varNum2])))
+}, dades[, varNum2], colnames(dades[, varNum2])))
 
 ```
 
@@ -383,7 +485,7 @@ if (!dir.exists("IQR")) {
 outliers_IQR <- data.frame(Variable = character(), Num_Outliers = integer(), stringsAsFactors = FALSE)
 
 for (var in varIQR) {
-  x <- datos[[var]]
+  x <- dades[[var]]
   Q1 <- quantile(x, probs = 0.25, na.rm = TRUE)
   Q3 <- quantile(x, probs = 0.75, na.rm = TRUE)
   IQR_value <- Q3 - Q1
@@ -403,6 +505,7 @@ for (var in varIQR) {
   dev.off()
 }
 
+rm(IQR_value, lower_bound, upper_bound, num_outliers, Q1, Q3, var, x)
 outliers_IQR
 ```
 
@@ -415,7 +518,7 @@ if (!dir.exists("Hampel")) {
 outliers_hampel <- data.frame(Variable = character(), Num_Outliers = integer(), stringsAsFactors = FALSE)
 
 for (var in varHampel) {
-  x <- datos[[var]]
+  x <- dades[[var]]
   mediana <- median(x, na.rm = TRUE)
   mad_value <- mad(x, constant = 1, na.rm = TRUE)  
   lower_bound <- mediana - 3 * mad_value
@@ -435,7 +538,7 @@ for (var in varHampel) {
   dev.off()
 }
 
-# Mostrar el dataframe amb els outliers
+rm(mad_value, lower_bound, upper_bound, num_outliers, mediana, var, x)
 outliers_hampel
 ```
 
@@ -443,21 +546,22 @@ outliers_hampel
 
 #### 3.2.1 Distància Mahalanobis
 ```{r}
-m <- colMeans(datos[,varNum2])
-S <- cov(datos[,varNum2])
-md <- mahalanobis(datos[,varNum2], center = m, cov = S)
-llindar <- qchisq(0.99, df = ncol(datos[,varNum2]))
+m <- colMeans(dades[,varNum2])
+S <- cov(dades[,varNum2])
+md <- mahalanobis(dades[,varNum2], center = m, cov = S)
+llindar <- qchisq(0.99, df = ncol(dades[,varNum2]))
 posicions <- which(md > llindar)
-outlierMahalanobis <- seq_len(nrow(datos)) %in% posicions
+outlierMahalanobis <- seq_len(nrow(dades)) %in% posicions
 par(mfrow = c(1, 1))
 plot(md, pch = 1, col = ifelse(outlierMahalanobis, "red", "black"),
     main = "Detecció Mahalanobis")
 abline(h = llindar, col = "red", lty = 2)
-which.max(dis$md)
-datos[which.max(dis$md),]
-pairs(datos[, varNum2],col = ifelse(outlierMahalanobis, "red", "black"),
+which.max(md)
+dades[which.max(md),]
+pairs(dades[, varNum2],col = ifelse(outlierMahalanobis, "red", "black"),
   pch = 1, main = "Detecció outliers Mahalanobis")
 sum(outlierMahalanobis)
+rm(llindar, m, S, posicions, md)
 ```
 
 #### 3.2.2 Local Outlier Factor (LOF)
@@ -465,13 +569,14 @@ sum(outlierMahalanobis)
 library(DMwR2)
 library(dplyr)
 
-outlierLOF <- lofactor(datos[, varNum2], k = 5)
+outlierLOF <- lofactor(dades[, varNum2], k = 5)
 par(mfrow=c(1,1))
 plot(density(outlierLOF))
 posicions <- which(outlierLOF > quantile(outlierLOF, probs = 0.98))
 sort(outlierLOF[posicions], decreasing = T)
 outlierLOF <- outlierLOF > quantile(outlierLOF, probs = 0.98)
-pairs(datos[, varNum2], col = ifelse(outlierLOF, "red", "black"),
+pairs(dades[, varNum2], col = ifelse(outlierLOF, "red", "black"),
   pch = 1, main = "Detecció outliers LOF")
 sum(outlierLOF)
+rm(posicions)
 ```
