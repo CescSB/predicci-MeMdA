@@ -51,6 +51,7 @@ Classifiquem les variables en dos grups per l'anàlisi exploratori univariant i 
 ```{r echo=FALSE}
 (varNum <- names(clases)[which(clases %in% c("numeric", "integer"))])
 ```
+
 ```{r echo=FALSE}
 (varCat <- names(clases)[which(clases %in% c("character", "factor"))])
 ```
@@ -379,6 +380,7 @@ for(v in varCat2){
     meth[v] <- "polyreg"
   }
 }
+meth[ids] <- ""
 ```
 
 
@@ -407,6 +409,12 @@ dades <- mice::complete(imp, action = 1)
 Comprovació de NA
 ```{r}
 colSums(is.na(dades))
+```
+
+Qualitat imputació
+```{r}
+plot(imp)                 
+stripplot(imp, pch = 20)
 ```
 
 Guardar dataset
