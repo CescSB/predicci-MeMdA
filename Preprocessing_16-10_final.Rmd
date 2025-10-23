@@ -421,7 +421,11 @@ Guardar dataset
 ```{r}
 saveRDS(imp, "dades.rds")
 write.csv(dades, "dades.csv", row.names = FALSE)
-dades <- read.csv("dades.csv")
+library(mice)
+datos <- readRDS("dades.rds")
+datos <- complete(datos, action="long")
+library(dplyr)
+datos %>% select(-.imp, -.id)
 ```
 
 ## 3. Outliers
