@@ -1,4 +1,6 @@
-# --- Paquets
+
+#LLIBRERIES
+
 # install.packages(c("FactoMineR","factoextra","caret","class","pROC"))
 library(FactoMineR)
 library(factoextra)
@@ -12,6 +14,8 @@ library(dplyr)
 datos %>% select(-.imp, -.id)
 
 
+
+# FAMD
 dades_famd <- datos[ , !(names(datos) %in% c("Exited", "ID", "Surname"))]
 res.famd   <- FAMD(dades_famd, graph = FALSE)
 coords     <- res.famd$ind$coord  # coordenades factorials de les observacions
@@ -46,28 +50,181 @@ ctrl <- trainControl(
   savePredictions = "final"
 )
 
-# Entrenar el model KNN i buscar el K òptim
+# DADES TEST REAL:
+library(mice)
+test_kaggle <- readRDS("test_kaggle_imp.rds")
+test_kaggle <- complete(datos, action="long")
+library(dplyr)
+test_kaggle %>% select(-.imp, -.id)
+
+
+
+
+#-----------------------------------------------------------------------------
+# MODEL 1: KNN FAMD
 set.seed(123)
-knn_fit <- train(
+knn_famd <- train(
   Exited ~ .,
   data = train_df,
   method = "knn",
   trControl = ctrl,
-  metric = "ROC",                  # optimitza pel valor ROC
+  metric = "ROC",               
   tuneGrid = tune_grid,
-  preProcess = c("center", "scale")  # normalitza coordenades
+  preProcess = c("center", "scale") 
 )
 
-# Resultats del model
-print(knn_fit)
-knn_fit$bestTune     # Mostra el millor valor de K
-plot(knn_fit)        # Gràfic de ROC o Accuracy segons K
+pred_knn_famd <- predict(knn_famd, newdata = test_df)
+cm_knn_famd <- confusionMatrix(pred_knn_famd, test_df$Exited, positive = "Exited0")
+cm_knn_famd
 
-# Prediccions sobre el conjunt de test
-pred_class <- predict(knn_fit, newdata = test_df)
+# TEST REAL:
+test_knn_famd <- predict(knn_famd, newdata = test_kaggle)
 
-# Matriu de confusió i mètriques (positiu = "Exited0")
-cm <- confusionMatrix(pred_class, test_df$Exited, positive = "Exited0")
-cm
+
+
+
+#-----------------------------------------------------------------------------
+# MODEL 2: KNN FAMD ROSE
+set.seed(123)
+train_df_rose <- ROSE(Exited ~ ., data = train_df, seed = 123)$data
+train_df_rose$Exited <- factor(train_df_rose$Exited, levels = levels(train_df$Exited))
+
+set.seed(123)
+knn_famd_rose <- train(
+  Exited ~ .,
+  data = train_df_rose,
+  method = "knn",
+  trControl = ctrl,
+  metric = "ROC",                 
+  tuneGrid = tune_grid,
+  preProcess = c("center", "scale") 
+)
+
+pred_knn_famd_rose <- predict(knn_famd_rose, newdata = test_df)
+cm_knn_famd_rose <- confusionMatrix(pred_knn_famd_rose, test_df$Exited, positive = "Exited0")
+cm_knn_famd_rose
+
+# TEST REAL:
+test_knn_famd_rose <- predict(knn_famd_rose, newdata = test_kaggle)
+
+
+
+
+#-----------------------------------------------------------------------------
+# MODEL 3: KNN EDA
+df4 <- data.frame(
+  Age = datos$Age,
+  Balance = datos$Balance,
+  CreditScore = datos$CreditScore,
+  EstimatedSalary = datos$EstimatedSalary,
+  Exited = y
+)
+
+train4 <- df4[index, , drop = FALSE]
+test4  <- df4[-index, , drop = FALSE]
+
+train4$Exited <- factor(train4$Exited, levels = c("Exited0","Exited1"))
+test4$Exited  <- factor(test4$Exited,  levels = levels(train4$Exited))
+
+set.seed(123)
+knn_eda <- train(
+  Exited ~ Age + Balance + CreditScore + EstimatedSalary,
+  data = train4,
+  method = "knn",
+  trControl = ctrl,                
+  metric = "ROC",
+  preProcess = c("center", "scale")
+)
+
+pred_knn_eda <- predict(knn_eda, newdata = test4)
+cm_knn_eda <- confusionMatrix(pred_knn_eda, test4$Exited, positive = "Exited0")
+cm_knn_eda
+
+# TEST REAL:
+test_knn_eda <- predict(knn_eda, newdata = test_kaggle)
+
+
+
+
+#-----------------------------------------------------------------------------
+# MODEL 4: KNN EDA ROSE
+set.seed(123)
+train4_rose <- ROSE(Exited ~ ., data = train4, seed = 123)$data
+train4_rose$Exited <- factor(train4_rose$Exited, levels = levels(train4$Exited))
+
+set.seed(123)
+knn_eda_rose <- train(
+  Exited ~ Age + Balance + CreditScore + EstimatedSalary,
+  data = train4_rose,
+  method = "knn",
+  trControl = ctrl,
+  metric = "ROC",
+  preProcess = c("center", "scale")
+)
+
+pred_knn_eda_rose <- predict(knn_eda_rose, newdata = test4)
+cm_knn_eda_rose <- confusionMatrix(pred_knn_eda_rose, test4$Exited, positive = "Exited0")
+cm_knn_eda_rose
+
+# TEST REAL:
+test_knn_eda_rose <- predict(knn_eda_rose, newdata = test_kaggle)
+
+
+
+
+#-----------------------------------------------------------------------------
+# MODEL 5: NAIVE BAYES FAMD
+
+library(pROC)
+
+# Hiperparàmetres
+nb_grid <- expand.grid(
+  laplace   = c(0, 1, 5, 10),
+  usekernel = c(TRUE, FALSE),
+  adjust    = c(0.5, 1, 1.5)
+)
+
+#Naive Bayes FAMD
+set.seed(123)
+nb_famd<- train(
+  Exited ~ .,
+  data = train_df,
+  method = "naive_bayes",
+  trControl = ctrl,         
+  metric = "ROC",
+  preProcess = c("center", "scale"),
+  tuneGrid = nb_grid
+)
+
+pred_nb_famd<- predict(nb_famd, newdata = test_df)
+cm_nb_famd <- confusionMatrix(pred_nb_famd, test_df$Exited, positive = "Exited0")
+cm_nb_famd
+
+# TEST REAL:
+test_nb_famd <- predict(nb_famd, newdata = test_kaggle)
+
+
+
+
+#-----------------------------------------------------------------------------
+# MODEL 6: NAIVE BAYES FAMD ROSE
+set.seed(123)
+nb_famd_rose <- train(
+  Exited ~ .,
+  data = train_df_rose, 
+  method = "naive_bayes",
+  trControl = ctrl,
+  metric = "ROC",
+  preProcess = c("center", "scale"),
+  tuneGrid = nb_grid
+)
+
+pred_nb_famd_rose <- predict(nb_famd_rose, newdata = test_df)
+cm_nb_famd_rose <- confusionMatrix(pred_nb_famd_rode, test_df$Exited, positive = "Exited0")
+cm_nb_famd_rose
+
+# TEST REAL:
+test_nb_famd_rose <- predict(nb_famd_rose, newdata = test_kaggle)
+
 
 
