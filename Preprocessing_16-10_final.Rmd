@@ -259,6 +259,59 @@ for (varC in varCat2) {
 grid.arrange(grobs = plots,nrow=108)
 ```
 
+#### 2.2.2.3 Comparativa amb la variable resposta
+
+##### 2.2.2.3.1 Comparativa mitjançant boxplots
+
+```{r}
+for ( i in varNum2) {
+  boxplot(datos[[i]] ~ datos$Exited,
+          main = paste("Boxplot de", i, "vs Exited"),
+          xlab = "Exited",
+          ylab = i,
+          col = c(2,3))
+}
+```
+##### 2.2.2.3.2 Comparativa mitjançant wilcoxon i Kruskall Wallis
+```{r}
+alpha <- 0.1 
+resultados <- data.frame(
+  variable = character(),
+  p_kruskal = numeric(),
+  p_wilcox = numeric(),
+  significativo_Kruskal = character(),
+  significativo_Wilcox = character(),
+  stringsAsFactors = FALSE
+)
+
+# Bucle por variable
+for (i in varNum2) {
+
+# ---- Kruskal-Wallis ----
+  formula <- as.formula(paste(i, "~ Exited"))
+  test_kw <- kruskal.test(formula, data = datos)
+  p_kw <- test_kw$p.value
+
+# ---- Wilcoxon ----
+  test_w <- wilcox.test(formula, data = datos)
+  p_w <- test_w$p.value
+  significativo_Kruskal <- ifelse(p_kw < alpha, "Sí", "No")
+  significativo_Wilcox <- ifelse(p_w < alpha, "Sí", "No")
+
+# ---- Agregar fila ----
+  resultados <- rbind(resultados, data.frame(
+    variable = i,
+    p_kruskal = p_kw,
+    p_wilcox = p_w,
+    significativo_Kruskal =  significativo_Kruskal,
+    significativo_Wilcox = significativo_Wilcox
+  ))
+}
+
+# Mostrar resultados ordenados
+resultados <- resultados %>% arrange(p_kruskal)
+print(resultados)
+```
 
 ### 2.2.3 Categòriques vs. Categòriques
 
@@ -314,6 +367,66 @@ for (varc1 in varCat2) {
 mtext("Comparació de proporcions entre variables categòriques", 
       outer = TRUE, cex = 1.2, font = 2)
 
+```
+#### 2.2.3.3 Comparativa amb la variable resposta
+
+```{r}
+#install.packages("vcd")
+library(vcd)
+
+# Variable binaria
+var_binaria <- datos$Exited
+
+# Seleccionamos solo variables categóricas (factor o character)
+vars_cat3 <- datos[, sapply(datos, function(x) is.factor(x) | is.character(x))]
+
+
+# Quitamos la binaria de la lista (si está en vars_cat)
+vars_cat3 <- vars_cat3[, colnames(vars_cat3) != "Exited"]
+vars_cat3 <- vars_cat3[, colnames(vars_cat3) != "Surname"]
+
+# Creamos un data frame vacío para almacenar res# Creamos un data frame vacío para almacenar res# Creamos un data frame vacío para almacenar resultados de la v de crammer
+resultados <- data.frame(
+  Variable = character(),
+  V_de_Cramer = numeric(),
+  Interpretacion = character(),
+  stringsAsFactors = FALSE
+)
+
+# Función para interpretar V de Cramer
+interpretar_v <- function(v){
+  if(v < 0.1) return("Sin asociación / Muy débil")
+  else if(v < 0.3) return("Asociación débil")
+  else if(v < 0.5) return("Asociación moderada")
+  else return("Asociación fuerte")
+}
+
+# Loop a través de las variables categóricas
+for (var in colnames(vars_cat3)) {
+  
+  cat("\n====================================\n")
+  cat("Variable:", var, "\n")
+  cat("====================================\n")
+  
+  # Tabla de contingencia
+  tabla <- table(vars_cat3[[var]], var_binaria)
+  print(tabla)
+  
+  # V de Cramer
+  v <- assocstats(tabla)$cramer
+  cat("\nV de Cramer:", v, "\n")
+  
+  tabla <- table(vars_cat3[[var]], var_binaria)
+  v <- assocstats(tabla)$cramer
+  # Tabla 
+  resultados <- rbind(resultados,
+                      data.frame(
+                        Variable = var,
+                        V_de_Cramer = round(v, 6),
+                        Interpretacion = interpretar_v(v)
+                      ))
+}
+print(resultados)
 ```
 
 
