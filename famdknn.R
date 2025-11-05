@@ -36,7 +36,7 @@ test_df  <- data.frame(testX,  Exited = testY)
 # Definir la graella de valors de K (de 1 a 15, només senars)
 tune_grid <- data.frame(k = seq(1, 15, by = 2))
 
-# --- 5️⃣ Configurar la validació creuada
+# Configurar la validació creuada
 ctrl <- trainControl(
   method = "repeatedcv",       # validació creuada repetida
   number = 10,                 # 10 particions
