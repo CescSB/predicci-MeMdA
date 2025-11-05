@@ -53,7 +53,7 @@ ctrl <- trainControl(
 # DADES TEST REAL:
 library(mice)
 test_kaggle <- readRDS("test_kaggle_imp.rds")
-test_kaggle <- complete(datos, action="long")
+test_kaggle <- complete(test_kaggle, action="long")
 library(dplyr)
 test_kaggle %>% select(-.imp, -.id)
 
