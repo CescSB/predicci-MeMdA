@@ -9,7 +9,7 @@ library(class)
 
 library(mice)
 datos <- readRDS("dades.rds")
-datos <- complete(datos, action="long")
+datos <- complete(datos, action=m)
 library(dplyr)
 datos %>% select(-.imp, -.id)
 
@@ -58,7 +58,7 @@ IDs_test <- test_kaggle_inicial$ID
 
 library(mice)
 test_kaggle <- readRDS("test_kaggle_imp.rds")
-test_kaggle <- complete(test_kaggle, action="long")
+test_kaggle <- complete(test_kaggle, action=m)
 library(dplyr)
 test_kaggle %>% select(-.imp, -.id)
 
@@ -271,7 +271,7 @@ cm_nb_famd_rose
 test_nb_famd_rose <- predict(nb_famd_rose, newdata = test_kaggle_famd)
 test_nb_famd_rose <- ifelse(test_nb_famd_rose == "Exited1", "Yes", "No")
 resultat_nb_famd_rose <- data.frame( ID = IDs_test, Exited = test_nb_famd_rose)
-write.csv(resultat_nb_famd_rose, "Resultat/resultat_nb_famd.csv_rose", row.names = FALSE)
+write.csv(resultat_nb_famd_rose, "Resultat/resultat_nb_famd.csv", row.names = FALSE)
 
 
 

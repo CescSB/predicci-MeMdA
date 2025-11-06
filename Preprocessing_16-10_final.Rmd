@@ -516,7 +516,7 @@ imp <- mice::mice(
 
 Dades Imputades
 ```{r}
-dades <- mice::complete(imp, action = 1)
+dades <- mice::complete(imp, action = m)
 ```
 
 Comprovació de NA
@@ -536,7 +536,7 @@ saveRDS(imp, "dades.rds")
 write.csv(dades, "dades.csv", row.names = FALSE)
 library(mice)
 datos <- readRDS("dades.rds")
-datos <- complete(datos, action="long")
+datos <- complete(datos, action=m)
 library(dplyr)
 datos %>% select(-.imp, -.id)
 ```
