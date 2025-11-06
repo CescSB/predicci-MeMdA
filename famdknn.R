@@ -9,7 +9,7 @@ library(class)
 
 library(mice)
 datos <- readRDS("dades.rds")
-datos <- complete(datos, action=m)
+datos <- complete(datos, action=10)
 library(dplyr)
 datos %>% select(-.imp, -.id)
 
@@ -58,7 +58,7 @@ IDs_test <- test_kaggle_inicial$ID
 
 library(mice)
 test_kaggle <- readRDS("test_kaggle_imp.rds")
-test_kaggle <- complete(test_kaggle, action=m)
+test_kaggle <- complete(test_kaggle, action=10)
 library(dplyr)
 test_kaggle %>% select(-.imp, -.id)
 

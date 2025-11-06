@@ -61,5 +61,5 @@ imp <- mice::mice(
   printFlag = TRUE
 )
 
-test_kaggle_imp <- mice::complete(imp, action = m)
+test_kaggle_imp <- mice::complete(imp, action = 10)
 saveRDS(imp, "test_kaggle_imp.rds")
