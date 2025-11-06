@@ -20,7 +20,6 @@ test_kaggle$Geography <- as.factor(test_kaggle$Geography)
 test_kaggle$ComplaintsCount <- as.factor(test_kaggle$ComplaintsCount)
 test_kaggle$CustomerSegment <- as.factor(test_kaggle$CustomerSegment)
 test_kaggle$MaritalStatus <- as.factor(test_kaggle$MaritalStatus)
-test_kaggle$Exited <- as.factor(test_kaggle$Exited)
 (clases = sapply(test_kaggle, class))
 varNum <- names(clases)[which(clases %in% c("numeric", "integer"))]
 varCat <- names(clases)[which(clases %in% c("character", "factor"))]
