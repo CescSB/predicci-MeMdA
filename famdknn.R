@@ -50,13 +50,40 @@ ctrl <- trainControl(
   savePredictions = "final"
 )
 
-# DADES TEST REAL:
+
+# Carregar dades test kaggle format "normal" i en FAMD
+
+
 library(mice)
 test_kaggle <- readRDS("test_kaggle_imp.rds")
-test_kaggle <- complete(test_kaggle, action="long")
+test_kaggle <- complete(datos, action="long")
 library(dplyr)
 test_kaggle %>% select(-.imp, -.id)
 
+
+
+
+
+pred_cols <- colnames(dades_famd)
+new_raw <- test_kaggle[, pred_cols, drop = FALSE]
+
+for (v in pred_cols) {
+  if (is.factor(dades_famd[[v]])) {
+    new_raw[[v]] <- factor(new_raw[[v]], levels = levels(dades_famd[[v]]))
+  } else if (is.numeric(dades_famd[[v]])) {
+    new_raw[[v]] <- as.numeric(new_raw[[v]])
+  } else {
+    if (is.factor(dades_famd[[v]])) {
+      new_raw[[v]] <- factor(new_raw[[v]], levels = levels(dades_famd[[v]]))
+    }
+  }
+}
+
+new_proj <- predict.FAMD(res.famd, newdata = new_raw)
+new_coords <- as.data.frame(new_proj$coord, check.names=F)
+colnames(new_coords) <- colnames(coords)
+
+test_kaggle_famd <- new_coords[, colnames(trainX), drop = F]
 
 
 
@@ -78,7 +105,10 @@ cm_knn_famd <- confusionMatrix(pred_knn_famd, test_df$Exited, positive = "Exited
 cm_knn_famd
 
 # TEST REAL:
-test_knn_famd <- predict(knn_famd, newdata = test_kaggle)
+test_knn_famd <- predict(knn_famd, newdata = test_kaggle_famd)
+test_knn_famd <- ifelse(test_knn_famd == "Exited1", 1, 0)
+resultat_knn_famd <- data.frame( ID = test_kaggle$ID, Exited = test_knn_famd)
+write.csv(resultat_knn_famd, "Resultat/resultat_knn_famd.csv", row.names = FALSE)
 
 
 
@@ -105,7 +135,10 @@ cm_knn_famd_rose <- confusionMatrix(pred_knn_famd_rose, test_df$Exited, positive
 cm_knn_famd_rose
 
 # TEST REAL:
-test_knn_famd_rose <- predict(knn_famd_rose, newdata = test_kaggle)
+test_knn_famd_rose <- predict(knn_famd_rose, newdata = test_kaggle_famd)
+test_knn_famd_rose <- ifelse(test_knn_famd_rose == "Exited1", 1, 0)
+resultat_knn_famd_rose <- data.frame( ID = test_kaggle$ID, Exited = test_knn_famd_rose)
+write.csv(resultat_knn_famd_rose, "Resultat/resultat_knn_famd_rose.csv", row.names = FALSE)
 
 
 
@@ -142,6 +175,9 @@ cm_knn_eda
 
 # TEST REAL:
 test_knn_eda <- predict(knn_eda, newdata = test_kaggle)
+test_knn_eda <- ifelse(test_knn_eda == "Exited1", 1, 0)
+resultat_knn_eda <- data.frame( ID = test_kaggle$ID, Exited = test_knn_eda)
+write.csv(resultat_knn_eda, "Resultat/resultat_knn_eda.csv", row.names = FALSE)
 
 
 
@@ -168,6 +204,9 @@ cm_knn_eda_rose
 
 # TEST REAL:
 test_knn_eda_rose <- predict(knn_eda_rose, newdata = test_kaggle)
+test_knn_eda_rose <- ifelse(test_knn_eda_rose == "Exited1", 1, 0)
+resultat_knn_eda_rose <- data.frame( ID = test_kaggle$ID, Exited = test_knn_eda_rose)
+write.csv(resultat_knn_eda_rose, "Resultat/resultat_knn_eda_rose.csv", row.names = FALSE)
 
 
 
@@ -201,7 +240,10 @@ cm_nb_famd <- confusionMatrix(pred_nb_famd, test_df$Exited, positive = "Exited0"
 cm_nb_famd
 
 # TEST REAL:
-test_nb_famd <- predict(nb_famd, newdata = test_kaggle)
+test_nb_famd <- predict(nb_famd, newdata = test_kaggle_famd)
+test_nb_famd <- ifelse(test_nb_famd == "Exited1", 1, 0)
+resultat_nb_famd <- data.frame( ID = test_kaggle$ID, Exited = test_nb_famd)
+write.csv(resultat_nb_famd, "Resultat/resultat_nb_famd.csv", row.names = FALSE)
 
 
 
@@ -224,7 +266,10 @@ cm_nb_famd_rose <- confusionMatrix(pred_nb_famd_rode, test_df$Exited, positive =
 cm_nb_famd_rose
 
 # TEST REAL:
-test_nb_famd_rose <- predict(nb_famd_rose, newdata = test_kaggle)
+test_nb_famd_rose <- predict(nb_famd_rose, newdata = test_kaggle_famd)
+test_nb_famd_rose <- ifelse(test_nb_famd_rose == "Exited1", 1, 0)
+resultat_nb_famd_rose <- data.frame( ID = test_kaggle$ID, Exited = test_nb_famd_rose)
+write.csv(resultat_nb_famd_rose, "Resultat/resultat_nb_famd.csv_rose", row.names = FALSE)
 
 
 
