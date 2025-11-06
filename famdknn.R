@@ -51,12 +51,14 @@ ctrl <- trainControl(
 )
 
 
-# Carregar dades test kaggle format "normal" i en FAMD
+# Carregar dades test kaggle format "normal", imputat i en FAMD
 
+test_kaggle_inicial <- read.csv("data/test.csv")
+IDs_test <- test_kaggle_inicial$ID
 
 library(mice)
 test_kaggle <- readRDS("test_kaggle_imp.rds")
-test_kaggle <- complete(datos, action="long")
+test_kaggle <- complete(test_kaggle, action="long")
 library(dplyr)
 test_kaggle %>% select(-.imp, -.id)
 
@@ -107,7 +109,7 @@ cm_knn_famd
 # TEST REAL:
 test_knn_famd <- predict(knn_famd, newdata = test_kaggle_famd)
 test_knn_famd <- ifelse(test_knn_famd == "Exited1", "Yes", "No")
-resultat_knn_famd <- data.frame( ID = test_kaggle$ID, Exited = test_knn_famd)
+resultat_knn_famd <- data.frame( ID = IDs_test, Exited = test_knn_famd)
 write.csv(resultat_knn_famd, "Resultat/resultat_knn_famd.csv", row.names = FALSE)
 
 
@@ -137,7 +139,7 @@ cm_knn_famd_rose
 # TEST REAL:
 test_knn_famd_rose <- predict(knn_famd_rose, newdata = test_kaggle_famd)
 test_knn_famd_rose <- ifelse(test_knn_famd_rose == "Exited1", "Yes", "No")
-resultat_knn_famd_rose <- data.frame( ID = test_kaggle$ID, Exited = test_knn_famd_rose)
+resultat_knn_famd_rose <- data.frame( ID = IDs_test, Exited = test_knn_famd_rose)
 write.csv(resultat_knn_famd_rose, "Resultat/resultat_knn_famd_rose.csv", row.names = FALSE)
 
 
@@ -176,7 +178,7 @@ cm_knn_eda
 # TEST REAL:
 test_knn_eda <- predict(knn_eda, newdata = test_kaggle)
 test_knn_eda <- ifelse(test_knn_eda == "Exited1", "Yes", "No")
-resultat_knn_eda <- data.frame( ID = test_kaggle$ID, Exited = test_knn_eda)
+resultat_knn_eda <- data.frame( ID = IDs_test, Exited = test_knn_eda)
 write.csv(resultat_knn_eda, "Resultat/resultat_knn_eda.csv", row.names = FALSE)
 
 
@@ -205,7 +207,7 @@ cm_knn_eda_rose
 # TEST REAL:
 test_knn_eda_rose <- predict(knn_eda_rose, newdata = test_kaggle)
 test_knn_eda_rose <- ifelse(test_knn_eda_rose == "Exited1", "Yes", "No")
-resultat_knn_eda_rose <- data.frame( ID = test_kaggle$ID, Exited = test_knn_eda_rose)
+resultat_knn_eda_rose <- data.frame( ID = IDs_test, Exited = test_knn_eda_rose)
 write.csv(resultat_knn_eda_rose, "Resultat/resultat_knn_eda_rose.csv", row.names = FALSE)
 
 
@@ -242,7 +244,7 @@ cm_nb_famd
 # TEST REAL:
 test_nb_famd <- predict(nb_famd, newdata = test_kaggle_famd)
 test_nb_famd <- ifelse(test_nb_famd == "Exited1", "Yes", "No")
-resultat_nb_famd <- data.frame( ID = test_kaggle$ID, Exited = test_nb_famd)
+resultat_nb_famd <- data.frame( ID = IDs_test, Exited = test_nb_famd)
 write.csv(resultat_nb_famd, "Resultat/resultat_nb_famd.csv", row.names = FALSE)
 
 
@@ -268,7 +270,7 @@ cm_nb_famd_rose
 # TEST REAL:
 test_nb_famd_rose <- predict(nb_famd_rose, newdata = test_kaggle_famd)
 test_nb_famd_rose <- ifelse(test_nb_famd_rose == "Exited1", "Yes", "No")
-resultat_nb_famd_rose <- data.frame( ID = test_kaggle$ID, Exited = test_nb_famd_rose)
+resultat_nb_famd_rose <- data.frame( ID = IDs_test, Exited = test_nb_famd_rose)
 write.csv(resultat_nb_famd_rose, "Resultat/resultat_nb_famd.csv_rose", row.names = FALSE)
 
 
