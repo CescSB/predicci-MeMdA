@@ -106,7 +106,7 @@ cm_knn_famd
 
 # TEST REAL:
 test_knn_famd <- predict(knn_famd, newdata = test_kaggle_famd)
-test_knn_famd <- ifelse(test_knn_famd == "Exited1", 1, 0)
+test_knn_famd <- ifelse(test_knn_famd == "Exited1", "Yes", "No")
 resultat_knn_famd <- data.frame( ID = test_kaggle$ID, Exited = test_knn_famd)
 write.csv(resultat_knn_famd, "Resultat/resultat_knn_famd.csv", row.names = FALSE)
 
@@ -136,7 +136,7 @@ cm_knn_famd_rose
 
 # TEST REAL:
 test_knn_famd_rose <- predict(knn_famd_rose, newdata = test_kaggle_famd)
-test_knn_famd_rose <- ifelse(test_knn_famd_rose == "Exited1", 1, 0)
+test_knn_famd_rose <- ifelse(test_knn_famd_rose == "Exited1", "Yes", "No")
 resultat_knn_famd_rose <- data.frame( ID = test_kaggle$ID, Exited = test_knn_famd_rose)
 write.csv(resultat_knn_famd_rose, "Resultat/resultat_knn_famd_rose.csv", row.names = FALSE)
 
@@ -175,7 +175,7 @@ cm_knn_eda
 
 # TEST REAL:
 test_knn_eda <- predict(knn_eda, newdata = test_kaggle)
-test_knn_eda <- ifelse(test_knn_eda == "Exited1", 1, 0)
+test_knn_eda <- ifelse(test_knn_eda == "Exited1", "Yes", "No")
 resultat_knn_eda <- data.frame( ID = test_kaggle$ID, Exited = test_knn_eda)
 write.csv(resultat_knn_eda, "Resultat/resultat_knn_eda.csv", row.names = FALSE)
 
@@ -204,7 +204,7 @@ cm_knn_eda_rose
 
 # TEST REAL:
 test_knn_eda_rose <- predict(knn_eda_rose, newdata = test_kaggle)
-test_knn_eda_rose <- ifelse(test_knn_eda_rose == "Exited1", 1, 0)
+test_knn_eda_rose <- ifelse(test_knn_eda_rose == "Exited1", "Yes", "No")
 resultat_knn_eda_rose <- data.frame( ID = test_kaggle$ID, Exited = test_knn_eda_rose)
 write.csv(resultat_knn_eda_rose, "Resultat/resultat_knn_eda_rose.csv", row.names = FALSE)
 
@@ -241,7 +241,7 @@ cm_nb_famd
 
 # TEST REAL:
 test_nb_famd <- predict(nb_famd, newdata = test_kaggle_famd)
-test_nb_famd <- ifelse(test_nb_famd == "Exited1", 1, 0)
+test_nb_famd <- ifelse(test_nb_famd == "Exited1", "Yes", "No")
 resultat_nb_famd <- data.frame( ID = test_kaggle$ID, Exited = test_nb_famd)
 write.csv(resultat_nb_famd, "Resultat/resultat_nb_famd.csv", row.names = FALSE)
 
@@ -267,7 +267,7 @@ cm_nb_famd_rose
 
 # TEST REAL:
 test_nb_famd_rose <- predict(nb_famd_rose, newdata = test_kaggle_famd)
-test_nb_famd_rose <- ifelse(test_nb_famd_rose == "Exited1", 1, 0)
+test_nb_famd_rose <- ifelse(test_nb_famd_rose == "Exited1", "Yes", "No")
 resultat_nb_famd_rose <- data.frame( ID = test_kaggle$ID, Exited = test_nb_famd_rose)
 write.csv(resultat_nb_famd_rose, "Resultat/resultat_nb_famd.csv_rose", row.names = FALSE)
 
