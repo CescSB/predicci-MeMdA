@@ -705,3 +705,11 @@ pairs(dades[, varNum2], col = ifelse(outlierLOF, "red", "black"),
 sum(outlierLOF)
 rm(posicions)
 ```
+
+
+## 4
+```{r}
+
+```
+
+

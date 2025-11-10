@@ -5,8 +5,8 @@
 library(FactoMineR)
 library(factoextra)
 library(caret)
+library(ROSE)
 library(class)
-
 library(mice)
 datos <- readRDS("dades.rds")
 datos <- complete(datos, action=10)
@@ -17,6 +17,7 @@ datos %>% select(-.imp, -.id)
 
 # FAMD
 dades_famd <- datos[ , !(names(datos) %in% c("Exited", "ID", "Surname"))]
+
 res.famd   <- FAMD(dades_famd, graph = FALSE)
 coords     <- res.famd$ind$coord  # coordenades factorials de les observacions
 
@@ -32,6 +33,7 @@ index  <- sample(1:nrow(coords), size = 0.7 * nrow(coords))
 trainX <- coords[index, , drop = FALSE]
 testX  <- coords[-index, , drop = FALSE]
 trainY <- y[index]
+
 testY  <- y[-index]
 
 train_df <- data.frame(trainX, Exited = trainY)
@@ -264,14 +266,14 @@ nb_famd_rose <- train(
 )
 
 pred_nb_famd_rose <- predict(nb_famd_rose, newdata = test_df)
-cm_nb_famd_rose <- confusionMatrix(pred_nb_famd_rode, test_df$Exited, positive = "Exited0")
+cm_nb_famd_rose <- confusionMatrix(pred_nb_famd_rose, test_df$Exited, positive = "Exited0")
 cm_nb_famd_rose
 
 # TEST REAL:
 test_nb_famd_rose <- predict(nb_famd_rose, newdata = test_kaggle_famd)
 test_nb_famd_rose <- ifelse(test_nb_famd_rose == "Exited1", "Yes", "No")
 resultat_nb_famd_rose <- data.frame( ID = IDs_test, Exited = test_nb_famd_rose)
-write.csv(resultat_nb_famd_rose, "Resultat/resultat_nb_famd.csv", row.names = FALSE)
+write.csv(resultat_nb_famd_rose, "Resultat/resultat_nb_famd_rose.csv", row.names = FALSE)
 
 
 
