@@ -82,16 +82,6 @@ if (length(ar_rules_fuga) > 0) {
   ar_rules_fuga_top <- ar_rules_fuga
 }
 
-# 4.6 files que compleixen la 1a regla de fuga
-ar_r1 <- ar_rules_fuga_top[1]
-ar_match <- as(is.subset(lhs(ar_r1), ar_tr), "matrix")[1, ]
-ar_rowids <- head(transactionInfo(ar_tr)$id[which(ar_match)], 10)
-print(ar_rowids)
-
-
-
-
-
 ### VISUALIZATION
 itemFrequencyPlot(ar_tr, topN = 30, cex.names = 0.7)
 
