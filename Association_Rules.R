@@ -62,7 +62,7 @@ ar_rules_fuga <- apriori(
 ar_rules_fuga <- ar_rules_fuga[!is.redundant(ar_rules_fuga)]
 ar_rules_fuga <- sort(ar_rules_fuga, by = "lift", decreasing = TRUE)
 
-#regles keep, support min = 0.045, confidence= 0.9
+#regles keep, support min = 0.05, confidence= 0.9
 ar_rules_keep <- apriori(
   ar_tr,
   parameter = list(support = 0.05, confidence = 0.9, minlen = 2, maxlen = 5),
@@ -81,6 +81,16 @@ if (length(ar_rules_fuga) > 0) {
 } else {
   ar_rules_fuga_top <- ar_rules_fuga
 }
+
+if (length(ar_rules_keep) > 0) {
+  ar_qc_k <- quality(ar_rules_keep)
+  if (is.null(ar_qc_k$count)) ar_qc_k$count <- ar_qc_k$support * ar_n
+  ar_sel_k <- which(ar_qc_k$lift > 1.15 & ar_qc_k$count >= 50)
+  ar_rules_keep_top <- if (length(ar_sel_k)) sort(ar_rules_keep[ar_sel_k], by = "lift") else ar_rules_keep
+} else {
+  ar_rules_keep_top <- ar_rules_keep
+}
+
 
 ### VISUALIZATION
 itemFrequencyPlot(ar_tr, topN = 30, cex.names = 0.7)
