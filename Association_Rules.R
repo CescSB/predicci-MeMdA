@@ -53,19 +53,19 @@ transactionInfo(ar_tr)$id <- ar_df$RowID
 ar_rhs_fuga <- paste0(target, "=1")
 ar_rhs_keep <- paste0(target, "=0")
 
-#regles fuga, support min = 0.035, confidence= 0.80
+#regles fuga, support min = 0.03, confidence= 0.7
 ar_rules_fuga <- apriori(
   ar_tr,
-  parameter = list(support = 0.035, confidence = 0.80, minlen = 2, maxlen = 5),
+  parameter = list(support = 0.03, confidence = 0.7, minlen = 2, maxlen = 5),
   appearance = list(default = "lhs", rhs = ar_rhs_fuga)
 )
 ar_rules_fuga <- ar_rules_fuga[!is.redundant(ar_rules_fuga)]
 ar_rules_fuga <- sort(ar_rules_fuga, by = "lift", decreasing = TRUE)
 
-#regles keep, support min = 0.04, confidence= 0.80
+#regles keep, support min = 0.045, confidence= 0.9
 ar_rules_keep <- apriori(
   ar_tr,
-  parameter = list(support = 0.04, confidence = 0.80, minlen = 2, maxlen = 5),
+  parameter = list(support = 0.05, confidence = 0.9, minlen = 2, maxlen = 5),
   appearance = list(default = "lhs", rhs = ar_rhs_keep)
 )
 ar_rules_keep <- ar_rules_keep[!is.redundant(ar_rules_keep)]
