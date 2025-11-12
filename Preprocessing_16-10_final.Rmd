@@ -537,8 +537,7 @@ write.csv(dades, "dades.csv", row.names = FALSE)
 library(mice)
 datos <- readRDS("dades.rds")
 datos <- complete(datos, action=10)
-library(dplyr)
-datos %>% select(-.imp, -.id)
+
 ```
 
 ## 3. Outliers
