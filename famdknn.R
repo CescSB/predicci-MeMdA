@@ -8,28 +8,27 @@ library(caret)
 library(ROSE)
 library(class)
 library(mice)
-datos <- readRDS("dades.rds")
-datos <- complete(datos, action=10)
-library(dplyr)
-datos %>% select(-.imp, -.id)
+dades <- readRDS("dades.rds")
+#dades <- complete(dades, action=10)
+
 
 
 
 # FAMD
-dades_famd <- datos[ , !(names(datos) %in% c("Exited", "ID", "Surname"))]
+dades_famd <- dades[ , !(names(dades) %in% c("Exited", "ID", "Surname"))]
 
 res.famd   <- FAMD(dades_famd, graph = FALSE)
 coords     <- res.famd$ind$coord  # coordenades factorials de les observacions
 
 # Variable objectiu amb noms vàlids ("Exited0", "Exited1")
 y <- factor(
-  ifelse(as.character(datos$Exited) %in% c("0", 0), "Exited0", "Exited1"),
-  levels = c("Exited0", "Exited1")   # "Exited0" serà el positiu
+  ifelse(as.character(dades$Exited) %in% c("0", 0), "Exited0", "Exited1"),
+  levels = c("Exited0", "Exited1")   # "Exited1" serà el positiu
 )
 
 # Separar dades en entrenament i test (70%-30%)
 set.seed(123)
-index  <- sample(1:nrow(coords), size = 0.7 * nrow(coords))
+index  <- sample(1:nrow(dades), size = 0.7 * nrow(dades))
 trainX <- coords[index, , drop = FALSE]
 testX  <- coords[-index, , drop = FALSE]
 trainY <- y[index]
@@ -40,7 +39,7 @@ train_df <- data.frame(trainX, Exited = trainY)
 test_df  <- data.frame(testX,  Exited = testY)
 
 # Definir la graella de valors de K (de 1 a 15, només senars)
-tune_grid <- data.frame(k = seq(1, 15, by = 2))
+tune_grid <- data.frame(k = seq(1, 21, by = 2))
 
 # Configurar la validació creuada
 ctrl <- trainControl(
@@ -53,16 +52,16 @@ ctrl <- trainControl(
 )
 
 
-# Carregar dades test kaggle format "normal", imputat i en FAMD
+# Carregar dades test kaggle format "normal", (imputat) i en FAMD
 
 test_kaggle_inicial <- read.csv("data/test.csv")
 IDs_test <- test_kaggle_inicial$ID
 
-library(mice)
-test_kaggle <- readRDS("test_kaggle_imp.rds")
-test_kaggle <- complete(test_kaggle, action=10)
-library(dplyr)
-test_kaggle %>% select(-.imp, -.id)
+#library(mice)
+#test_kaggle <- readRDS("test_kaggle_imp.rds")
+#test_kaggle <- complete(test_kaggle, action=10)
+#library(dplyr)
+#test_kaggle %>% select(-.imp, -.id)
 
 
 
@@ -91,6 +90,23 @@ test_kaggle_famd <- new_coords[, colnames(trainX), drop = F]
 
 
 
+# Càlcul F1-Score
+F1Score<- function(cm) {
+  positive <- "Exited1"
+  levels <- rownames(cm$table)
+  negative <- levels[levels != positive]
+  TP <- cm$table[positive, positive]
+  FP <- cm$table[positive, negative]
+  FN <- cm$table[negative, positive]
+  precision <- TP / (TP + FP)
+  recall <- TP / (TP + FN)
+  F1 <- 2 * precision * recall / (precision + recall)
+  
+  return(F1)
+}
+
+
+
 #-----------------------------------------------------------------------------
 # MODEL 1: KNN FAMD
 set.seed(123)
@@ -105,7 +121,7 @@ knn_famd <- train(
 )
 
 pred_knn_famd <- predict(knn_famd, newdata = test_df)
-cm_knn_famd <- confusionMatrix(pred_knn_famd, test_df$Exited, positive = "Exited0")
+cm_knn_famd <- confusionMatrix(pred_knn_famd, test_df$Exited, positive = "Exited1")
 cm_knn_famd
 
 # TEST REAL:
@@ -135,7 +151,7 @@ knn_famd_rose <- train(
 )
 
 pred_knn_famd_rose <- predict(knn_famd_rose, newdata = test_df)
-cm_knn_famd_rose <- confusionMatrix(pred_knn_famd_rose, test_df$Exited, positive = "Exited0")
+cm_knn_famd_rose <- confusionMatrix(pred_knn_famd_rose, test_df$Exited, positive = "Exited1")
 cm_knn_famd_rose
 
 # TEST REAL:
@@ -150,10 +166,10 @@ write.csv(resultat_knn_famd_rose, "Resultat/resultat_knn_famd_rose.csv", row.nam
 #-----------------------------------------------------------------------------
 # MODEL 3: KNN EDA
 df4 <- data.frame(
-  Age = datos$Age,
-  Balance = datos$Balance,
-  CreditScore = datos$CreditScore,
-  EstimatedSalary = datos$EstimatedSalary,
+  Age = dades$Age,
+  Balance = dades$Balance,
+  CreditScore = dades$CreditScore,
+  EstimatedSalary = dades$EstimatedSalary,
   Exited = y
 )
 
@@ -174,7 +190,7 @@ knn_eda <- train(
 )
 
 pred_knn_eda <- predict(knn_eda, newdata = test4)
-cm_knn_eda <- confusionMatrix(pred_knn_eda, test4$Exited, positive = "Exited0")
+cm_knn_eda <- confusionMatrix(pred_knn_eda, test4$Exited, positive = "Exited1")
 cm_knn_eda
 
 # TEST REAL:
@@ -202,9 +218,14 @@ knn_eda_rose <- train(
   preProcess = c("center", "scale")
 )
 
+pred_knn_eda_rose_train <- predict(knn_eda_rose, newdata = train4_rose)
+(cm_train <- confusionMatrix(pred_knn_eda_rose_train, train4_rose$Exited, positive = "Exited1"))
+F1Score(cm_train)
+
 pred_knn_eda_rose <- predict(knn_eda_rose, newdata = test4)
-cm_knn_eda_rose <- confusionMatrix(pred_knn_eda_rose, test4$Exited, positive = "Exited0")
+(cm_knn_eda_rose <- confusionMatrix(pred_knn_eda_rose, test4$Exited, positive = "Exited1"))
 cm_knn_eda_rose
+F1Score(cm_knn_eda_rose)
 
 # TEST REAL:
 test_knn_eda_rose <- predict(knn_eda_rose, newdata = test_kaggle)
@@ -240,7 +261,7 @@ nb_famd<- train(
 )
 
 pred_nb_famd<- predict(nb_famd, newdata = test_df)
-cm_nb_famd <- confusionMatrix(pred_nb_famd, test_df$Exited, positive = "Exited0")
+cm_nb_famd <- confusionMatrix(pred_nb_famd, test_df$Exited, positive = "Exited1")
 cm_nb_famd
 
 # TEST REAL:
@@ -266,7 +287,7 @@ nb_famd_rose <- train(
 )
 
 pred_nb_famd_rose <- predict(nb_famd_rose, newdata = test_df)
-cm_nb_famd_rose <- confusionMatrix(pred_nb_famd_rose, test_df$Exited, positive = "Exited0")
+cm_nb_famd_rose <- confusionMatrix(pred_nb_famd_rose, test_df$Exited, positive = "Exited1")
 cm_nb_famd_rose
 
 # TEST REAL:
