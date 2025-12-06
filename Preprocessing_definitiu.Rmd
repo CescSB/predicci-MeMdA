@@ -1,0 +1,581 @@
+---
+title: "Preprocessing_definitiu"
+author: "Arnau Diéguez, Gerard Müller, Víctor Rodríguez, Mario Ruberte i Francesc Sabaté"
+date: "2025-12-06"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 0 Lectura dades
+
+## 0.1 Lectura
+```{r}
+dades <- read.csv("data/train.csv")
+head(dades)
+summary(dades)
+colSums(is.na(dades))
+
+dades <- dades[,-1] #Eliminem la columna "X"
+```
+
+## 0.2 Tipologia variables
+```{r}
+(classes = sapply(dades, class))
+
+dades$NumOfProducts <- as.factor(dades$NumOfProducts)
+dades$HasCrCard <- as.factor(dades$HasCrCard)
+dades$IsActiveMember <- as.factor(dades$IsActiveMember)
+dades$SavingsAccountFlag <- as.factor(dades$SavingsAccountFlag)
+dades$LoanStatus <- as.factor(dades$LoanStatus)
+dades$Gender <- as.factor(dades$Gender)
+dades$EducationLevel <- as.factor(dades$EducationLevel)
+dades$Geography <- as.factor(dades$Geography)
+dades$ComplaintsCount <- as.factor(dades$ComplaintsCount)
+dades$CustomerSegment <- as.factor(dades$CustomerSegment)
+dades$MaritalStatus <- as.factor(dades$MaritalStatus)
+dades$Exited <- as.factor(dades$Exited)
+
+(classes = sapply(dades, class))
+
+library(skimr)
+library(tidyverse)
+library(inspectdf)
+
+inspect_types(dades) %>% show_plot()
+```
+
+## 0.3 Classificació Variables
+```{r}
+varNum <- names(classes)[which(classes %in% c("numeric", "integer"))]
+varCat <- names(classes)[which(classes %in% c("character", "factor"))]
+
+varCat2 <- varCat[-4] # Treure Surname
+varNum2 <- varNum[-8] # Treure ID
+
+rm(classes)
+```
+
+
+# 1. Anàlisi Exploratòri de Dades (EDA)
+
+## 1.1 Anàlisi Univariant 
+
+## 1.1.1 Anàlisi Univariant Numèric
+
+```{r}
+library(psych)
+psych::describe(dades[, varNum2]) 
+```
+
+```{r}
+for (var in varNum2) {
+  x <- dades[[var]]
+  x <- x[is.finite(x)]
+  n <- length(x)
+  if (n == 0) next
+  
+  if (is.integer(dades[[var]])) {
+    # Barplot per variables enteres
+    counts <- table(x)
+    barplot(
+      counts,
+      col = "#90CAF9", border = "#1565C0",
+      main = paste("Barplot variable", var),
+      xlab = var, ylab = "Freqüència"
+    )
+    
+  } else if (is.numeric(dades[[var]])) {
+    # Histograma simple amb 50 bins
+    hist(
+      x,
+      breaks = 50,
+      col = "#A5D6A7", border = "#2E7D32",
+      main = paste("Histogram variable", var),
+      xlab = var, ylab = "Freqüència"
+    )
+  }
+}
+rm(counts, n, var, x)
+```
+Hi ha molta asimetria, caldria transformar les variables normalitzant o bé aplicant logaritmes
+
+
+## 1.1.2 Anàlisi Univariant Categòric
+
+```{r}
+for (var in varCat2) {
+  tablaAbs <- data.frame(table(dades[, var]))
+  tablaFreq <- data.frame(table(dades[, var]) / sum(table(dades[, var])))
+  m <- match(tablaAbs$Var1, tablaFreq$Var1)
+  tablaAbs[, "FreqRel"] <- tablaFreq[m, "Freq"]
+  colnames(tablaAbs) <- c("Categoria", "FreqAbs", "FreqRel")
+  tablaAbs <- tablaAbs[order(-tablaAbs$FreqAbs), ]
+  print(tablaAbs)
+}
+rm(tablaAbs, tablaFreq, m, var)
+```
+
+```{r}
+library(ggplot2)
+par(mfrow = c(2, 2), mar = c(4, 4, 3, 1))
+
+plots <- list()  
+i <- 1           
+
+for (var in varCat2) {
+  tabla <- data.frame(table(dades[, var]) / sum(table(dades[, var])))
+  
+  p <- ggplot(data = tabla, aes(x = Var1, y = Freq)) +
+    geom_bar(stat = "identity", fill = "steelblue") +
+    geom_text(aes(label = paste0(round(Freq * 100, 2), "%")),
+              vjust = 1.6, color = "white", size = 3.5) +
+    theme_minimal() +
+    labs(title = paste("Dist.", var),
+         x = var,
+         y = "Proporció") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+  
+  print(p)  # <-- Afegeix això per mostrar el gràfic
+  plots[[i]] <- p
+  i <- i + 1
+}
+rm(p, plots, tabla, i, var)
+```
+A destacar un gran desbalenceig pel que respecte a la variable resposta, 79% es queden i 21% marxen, caldrà aplicar mètodes de balanceig com ROSE i SMOTE
+
+
+## 1.2 Anàlisi Bivariant
+
+### 1.2.1 Anàlisi Bivariant Numèric
+```{r}
+cor(dades[, varNum2], use = "complete.obs")
+library(ggcorrplot)
+corr <- round(cor(dades[, varNum2], use="complete.obs"), 1)
+ggcorrplot(corr, lab = T)
+rm(corr)
+```
+
+### 1.2.2 Anàlisi Bivariant Categòric
+```{r}
+for (varc1 in varCat2) {
+  for (varc2 in varCat2) {
+    if (varc1 != varc2) {
+      prop_table <- prop.table(table(dades[, varc1], dades[, varc2]))
+      cat("=============", varc1, " vs. ", varc2, "=========================\n")
+      print(prop_table)
+    }
+  }
+}
+rm(varc1,varc2,prop_table)
+```
+
+```{r}
+par(mfrow = c(2, 2))
+colores <- c("#4DBBD5", "#E64B35", "#00A087", "#3C5488", "#F39B7F")
+
+for (varc1 in varCat2) {
+  for (varc2 in varCat2) {
+    if (varc1 != varc2) {
+      
+      prop_table <- prop.table(table(dades[[varc1]], dades[[varc2]]))
+      
+      
+      barplot(prop_table, beside = TRUE,
+              col = colores[seq_len(nrow(prop_table))],
+              border = "white",              
+              ylim = c(0, max(prop_table) * 1.2),  
+              main = paste(varc1, "vs", varc2),    
+              ylab = "Proporció",
+              xlab = varc2,
+              legend.text = TRUE,            
+              args.legend = list(bty = "n", cex = 0.7, x = "topright")) 
+    }
+  }
+}
+rm(colores, prop_table, varc1, varc2,i,var, plots, p, tabla)
+```
+
+Els alemanys a priori tenen més tendència a marxar
+Els que no son membres actius tendeixen a marxar bastant més també
+Si el nombre de productes és superior o igual a 3 tendeixen molt a marxar. Per contraposició els que tenen només dos productes tendeixen més a quedar-se.
+
+
+## 1.3 Relacions significatives amb variable resposta
+
+### 1.3.1 Relació variables numèriques amb variable resposta
+
+```{r}
+for ( i in varNum2) {
+  boxplot(dades[[i]] ~ dades$Exited,
+          main = paste("Boxplot de", i, "vs Exited"),
+          xlab = "Exited",
+          ylab = i,
+          col = c(2,3))
+}
+
+rm(i)
+```
+
+```{r}
+alpha <- 0.1 
+resultats <- data.frame(
+  variable = character(),
+  p_kruskal = numeric(),
+  p_wilcox = numeric(),
+  significativo_Kruskal = character(),
+  significativo_Wilcox = character(),
+  stringsAsFactors = FALSE
+)
+
+for (i in varNum2) {
+
+  formula <- as.formula(paste(i, "~ Exited"))
+  test_kw <- kruskal.test(formula, data = dades)
+  p_kw <- test_kw$p.value
+
+  test_w <- wilcox.test(formula, data = dades)
+  p_w <- test_w$p.value
+  signif_Kruskal <- ifelse(p_kw < alpha, "Sí", "No")
+  signif_Wilcox <- ifelse(p_w < alpha, "Sí", "No")
+
+  resultats <- rbind(resultats, data.frame(
+    variable = i,
+    p_kruskal = p_kw,
+    p_wilcox = p_w,
+    signif_Kruskal =  signif_Kruskal,
+    signif_Wilcox = signif_Wilcox
+  ))
+}
+
+resultats <- resultats %>% arrange(p_kruskal)
+print(resultats)
+
+rm(test_kw, test_w, resultats, alpha, formula, i, p_kw, p_w, signif_Kruskal, signif_Wilcox)
+```
+Les variables numèriques Age, Balance, CreditScore i EstamatedSalary presenten una relació amb la variable resposta Exited.
+
+
+### 1.3.1 Relació variables categòriques amb variable resposta
+```{r}
+#install.packages("vcd")
+library(vcd)
+
+var_binaria <- dades$Exited
+vars_cat3 <- dades[, sapply(dades, function(x) is.factor(x) | is.character(x))]
+vars_cat3 <- vars_cat3[, colnames(vars_cat3) != "Exited"]
+vars_cat3 <- vars_cat3[, colnames(vars_cat3) != "Surname"]
+
+resultats <- data.frame(
+  Variable = character(),
+  V_de_Cramer = numeric(),
+  Interpretacion = character(),
+  stringsAsFactors = FALSE
+)
+
+interpretar_v <- function(v){
+  if(v < 0.1) return("Sense associació")
+  else if(v < 0.3) return("Associació dèbil")
+  else if(v < 0.5) return("Associació moderada")
+  else return("Associació forta")
+}
+
+for (var in colnames(vars_cat3)) {
+  
+  taula <- table(vars_cat3[[var]], var_binaria)
+  print(taula)
+  
+  v <- assocstats(taula)$cramer
+  cat("\nV de Cramer:", v, "\n")
+  
+  taula <- table(vars_cat3[[var]], var_binaria)
+  v <- assocstats(taula)$cramer
+
+  resultats <- rbind(resultats,
+                      data.frame(
+                        Variable = var,
+                        V_de_Cramer = round(v, 6),
+                        Interpretació = interpretar_v(v)
+                      ))
+}
+
+resultats <- resultats %>% arrange(desc(V_de_Cramer))
+print(resultats)
+
+rm(resultats, vars_cat3, taula, v, var, var_binaria, interpretar_v)
+```
+Les variables categòriques NumOfProducts, Geography, IsActiveMember i Gender presenten una relació amb la variable resposta Exited.
+
+
+## 1.4 Elimació observacions duplicades
+```{r}
+duplicats <- dades[duplicated(dades) | duplicated(dades, fromLast = TRUE),]
+nrow(duplicats)
+```
+Cap observació duplicada
+
+
+
+# 2. Tractament Missings
+```{r}
+list.of.packages = c("mice","VIM","naniar","dplyr") 
+
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages) > 0) {
+  install.packages(new.packages)
+}
+lapply(list.of.packages, require, character.only = T)
+rm(list.of.packages, new.packages)
+```
+
+## 2.1 Quantitat de missings
+```{r}
+sum(is.na(dades))
+colSums(is.na(dades))
+```
+
+## 2.2 Tipologia de missings
+```{r}
+dades[ , varCat2] <- lapply(dades[ , varCat2, drop = FALSE], function(x){
+  if (is.character(x)) factor(x) else x
+})
+
+try({
+  print(naniar::mcar_test(dades))
+}, silent = TRUE)
+
+VIM::aggr(
+  dades, col = c("blue", "grey"),border= NA, numbers = TRUE, sortVars = TRUE,
+  labels = names(dades), cex.axis = 0.8, gap = 3, combined = TRUE, 
+  only.miss = FALSE, prop = TRUE, plot = TRUE, ylab = c("Dades mancants", "Patró de NA"))
+
+```
+Els missings son completament aleatoris, no depenen de cap altra variable ni res.
+
+## 2.3 Eliminar observacions masses missings
+```{r}
+dades_pred <- dades[,-c(7,18,23)]
+percent_na_per_fila <- apply(dades_pred, 1, function(x) mean(is.na(x)*100))
+sum(percent_na_per_fila >= 50)
+dades <- dades[percent_na_per_fila < 50, ]
+
+colSums(is.na(dades))
+
+rm(percent_na_per_fila)
+```
+Eliminem aquelles observacions que tinguin un 50% o més de NA per tal de reduïr la quantitat d'individus generats artificialment. És a dir, eliminem els que tenen 10 o més variables predictores NA
+
+
+## 2.4 Imputació: MICE
+```{r}
+# Matriu predictora
+pred <- mice::make.predictorMatrix(dades)
+ids <- c("Surname", "ID")  
+pred[ , ids] <- 0  # que cap variable sigui imputada fent servir IDs
+pred[ids, ]  <- 0  # i que els IDs tampoc s'imputin
+
+# Mètode d'imputació
+meth <- mice::make.method(dades)
+meth[varNum2] <- "pmm"
+for(v in varCat2){
+  x <- dades[[v]]
+  if (is.factor(x) && nlevels(x) == 2) {
+    meth[v] <- "logreg"
+  } else if (is.ordered(x)) {
+    meth[v] <- "polr"
+  } else {
+    meth[v] <- "polyreg"
+  }
+}
+meth[ids] <- ""
+
+# Imputació
+set.seed(500)  # replicabilitat
+imp <- mice::mice(
+  data   = dades,
+  m      = 10,   
+  maxit  = 10,       
+  method = meth,
+  ridge = 1e-3,
+  predictorMatrix = pred,
+  printFlag = TRUE
+)
+
+# Dades imputades
+dades <- mice::complete(imp, action = 10)
+
+# Comprovació NA
+colSums(is.na(dades))
+
+# Qualitat imputació
+plot(imp)                 
+
+# Guardar dades resultant
+saveRDS(imp, "dades.rds")
+library(mice)
+dades <- readRDS("dades.rds")
+dades <- complete(dades, action=10)
+```
+
+
+# 3. Outliers
+```{r}
+list.of.packages = c("EnvStats", "ggplot2", "outliers", "remotes", "scatterplot3d", 
+                     "readr", "rgl", "plotly", "mvoutlier", "MVN", "chemometrics", 
+                     "adamethods", "DMwR2", "dplyr", "Rlof", "R.matlab", "solitude", 
+                     "tidyverse", "MLmetrics","chemometrics") 
+
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages) > 0) {
+  install.packages(new.packages)
+}
+lapply(list.of.packages, require, character.only = T)
+rm(list.of.packages, new.packages)
+```
+
+# 3.1 Detecció Univariant
+Per tal de decidir quin mètode utilitzarem per a cadascuna de les variables a la hora de detectar outliers, calculem la Kurtosisi i Skewness per tal de saber si la distribució és simètrica i/o normal. Si aquesta és simètrica farem servir IQR ja que es basa en els quartils 1 i 3 funcionant millor d'aquesta manera en dades simètriques, si no ho és Hampel Identifier ja que es basa en la mediana i MAD que és més robust i si s'assembla a una distribució normal Z-Scores.
+```{r}
+library(e1071)
+
+resultats <- data.frame(
+  Variable = character(), 
+  Skewness = numeric(), 
+  Kurtosis = numeric(),
+  Simetria = character(),
+  Normal = character(),
+  Mètode = character(),
+  stringsAsFactors = FALSE
+)
+
+for (var in varNum2) {
+  x <- dades[[var]] 
+  skew <- skewness(x, na.rm = TRUE)
+  kurt <- kurtosis(x, na.rm = TRUE)
+  simetria <- ifelse(abs(skew) < 0.75, "Sí", "No")
+  normal <- ifelse(kurt >= 2.5 & kurt <= 3.5 & abs(skew) < 0.75, "Sí", "No")
+  metode <- ifelse(simetria == "No" & normal == "No", "Hampel Identifier",
+                   ifelse(normal == "Sí", "Z-Scores", "IQR"))
+  resultats <- rbind(resultats, data.frame(Variable = var, Skewness = skew, Kurtosis = kurt,
+                                           Simetria = simetria, Normal = normal, Mètode = metode))
+}
+
+print(resultats)
+
+varIQR <- c("Tenure", "NetPromoterScore","TransactionFrequency","EstimatedSalary","DigitalEngagementScore","CreditScore","Balance")
+varHampel <- c("Age","AvgTransactionAmount")
+rm(kurt, metode, normal, simetria, skew, var, x, resultats)
+```
+
+### 3.1.1 IQR
+```{r}
+outliers_IQR <- data.frame(Variable = character(), Num_Outliers = integer(), stringsAsFactors = FALSE)
+
+for (var in varIQR) {
+  x <- dades[[var]]
+  Q1 <- quantile(x, probs = 0.25, na.rm = TRUE)
+  Q3 <- quantile(x, probs = 0.75, na.rm = TRUE)
+  IQR_value <- Q3 - Q1
+  lower_bound <- Q1 - 1.5 * IQR_value
+  upper_bound <- Q3 + 1.5 * IQR_value
+  
+  num_outliers <- sum(x < lower_bound | x > upper_bound, na.rm = TRUE)
+  outliers_IQR <- rbind(outliers_IQR, data.frame(Variable = var, Num_Outliers = num_outliers))
+  hist(x, breaks = 100, col = "skyblue", border = "black",
+       main = paste("Histograma de", var),
+       xlab = var, ylab = "Freqüència",
+       xlim = c(min(lower_bound, min(x, na.rm = TRUE)), max(upper_bound, max(x, na.rm = TRUE))))
+  abline(v = lower_bound, col = "red", lwd = 2, lty = 2)  
+  abline(v = upper_bound, col = "red", lwd = 2, lty = 2)  
+}
+
+rm(IQR_value, lower_bound, upper_bound, num_outliers, Q1, Q3, var, x)
+outliers_IQR
+```
+Cap outlier rellevant
+
+
+### 3.1.2 Hampel Identifier
+```{r}
+outliers_hampel <- data.frame(Variable = character(), Num_Outliers = integer(), stringsAsFactors = FALSE)
+
+for (var in varHampel) {
+  x <- dades[[var]]
+  mediana <- median(x, na.rm = TRUE)
+  mad_value <- mad(x, constant = 1, na.rm = TRUE)  
+  lower_bound <- mediana - 3 * mad_value
+  upper_bound <- mediana + 3 * mad_value
+  
+
+  num_outliers <- sum(x < lower_bound | x > upper_bound, na.rm = TRUE)
+  outliers_hampel <- rbind(outliers_hampel, data.frame(Variable = var, Num_Outliers = num_outliers))
+  hist(x, breaks = 100, col = "skyblue", border = "black",
+       main = paste("Histograma de", var),
+       xlab = var, ylab = "Freqüència",
+       xlim = c(min(lower_bound, min(x, na.rm = TRUE)), max(upper_bound, max(x, na.rm = TRUE))))
+  abline(v = lower_bound, col = "red", lwd = 2, lty = 2)  
+  abline(v = upper_bound, col = "red", lwd = 2, lty = 2)  
+}
+
+rm(mad_value, lower_bound, upper_bound, num_outliers, mediana, var, x)
+outliers_hampel
+
+rm(varIQR, varHampel,outliers_IQR, outliers_hampel)
+```
+Res que cridi especialment l'atenció tampoc, tot viable
+
+## 3.2 Detecció Multivariant
+
+### 3.2.1 Distància Mahalanobis
+```{r}
+m <- colMeans(dades[,varNum2])
+S <- cov(dades[,varNum2])
+md <- mahalanobis(dades[,varNum2], center = m, cov = S)
+llindar <- qchisq(0.99, df = ncol(dades[,varNum2]))
+posicions <- which(md > llindar)
+outlierMahalanobis <- seq_len(nrow(dades)) %in% posicions
+plot(md, pch = 1, col = ifelse(outlierMahalanobis, "red", "black"),
+    main = "Detecció Mahalanobis")
+abline(h = llindar, col = "red", lty = 2)
+
+pairs(dades[, varNum2],col = ifelse(outlierMahalanobis, "red", "black"),
+  pch = 1, main = "Detecció outliers Mahalanobis")
+
+sum(outlierMahalanobis)
+
+dades[posicions[order(-md[posicions])], varNum2]
+ordre_md <- order(-md[posicions])
+posicions_ordenades <- posicions[ordre_md]
+dades <- dades[-posicions_ordenades[c(1:6, 9:10)], ]
+
+rm(llindar, m, S, posicions, md, outlierMahalanobis, ordre_md, posicions_ordenades)
+```
+
+### 3.2.2 Local Outlier Factor LOF
+```{r}
+library(dbscan)
+outlier_score <- lof(dades[, varNum2], minPts = 5)
+outlierLOF <- outlier_score > quantile(outlier_score, probs = 0.99)
+sum(outlierLOF)
+sort(outlier_score, decreasing = T)
+outliers_df <- dades[outlierLOF, ]
+outliers_df[order(-outlier_score[outlierLOF]), varNum2]
+  
+posicions_outliers <- which(outlierLOF)
+ordre_outliers <- order(-outlier_score[outlierLOF])
+dades <- dades[-posicions_outliers[ordre_outliers[1:4]], ]
+  
+rm(outliers_df,ordre_outliers, outlier_score, outlierLOF, posicions_outliers)
+
+```
+
+
+```{r}
+saveRDS(dades, "dades.rds")
+dades <- readRDS("dades.rds")
+```
+
+
+
