@@ -573,6 +573,7 @@ rm(outliers_df,ordre_outliers, outlier_score, outlierLOF, posicions_outliers)
 
 
 ```{r}
+dades$ID <-1:nrow(dades)
 saveRDS(dades, "dades.rds")
 dades <- readRDS("dades.rds")
 ```
