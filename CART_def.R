@@ -115,8 +115,20 @@ upper.xerror # UNA ESTRATEGIA SERIA TREBALLAR AMB QUALSEVOL CP MENOR A AIXÒ PER
 #DIRECTAMENYT AMB EL MINIM
 
 which(xerror<upper.xerror) # ALTRES POSICIONS DE CPS AMB ELS QUE PODEM TREBALLAR
+tree_rose$cptable[which(xerror<upper.xerror),]
 
-tree_rose <- prune(tree_rose, cp = 0.002816291) 
+
+# POS       CP        F1Score_Test
+#  5     0.003610630     0.5357143
+#  6     0.002816291     0.5374211  
+#  7     0.002599653     0.539626
+#  8     0.002166378     0.539626
+#  9     0.001733102     0.5185857
+
+
+# Provar fer submission amb CP 0.002599653 i 0.002166378
+
+tree_rose <- prune(tree_rose, cp = 0.002599653) 
 rpart.plot(tree_rose, 5)
 
 importance <- tree_rose$variable.importance  
@@ -170,7 +182,7 @@ F1Score(cm_test2_rose)
 
 
 
-# TEST KAGGLE
+# TEST KAGGLE amb versió 2
 test_kaggle_inicial <- read.csv("data/test.csv")
 IDs_test <- test_kaggle_inicial$ID
 
@@ -185,3 +197,36 @@ cart_rose <- predict(arbol_final, newdata = test_kaggle, type='class')
 cart_rose <- ifelse(cart_rose == "1", "Yes", "No")
 resultat_cart_rose <- data.frame( ID = IDs_test, Exited = cart_rose)
 write.csv(resultat_cart_rose, "Resultat/resultat_cart_rose.csv", row.names = FALSE)
+
+
+
+
+
+
+# TEST KAGGLE amb versió 1 millors cps
+test_kaggle_inicial <- read.csv("data/test.csv")
+IDs_test <- test_kaggle_inicial$ID
+
+library(mice)
+test_kaggle <- readRDS("test_kaggle_imp.rds")
+test_kaggle <- complete(test_kaggle, action=10)
+library(dplyr)
+test_kaggle %>% select(-.imp, -.id)
+
+tree_rose <- rpart(Exited ~ ., data = train2_rose, cp = 0) 
+tree_rose <- prune(tree_rose, cp = 0.002599653) 
+
+cart_rose1 <- predict(tree_rose, newdata = test_kaggle, type='class')
+cart_rose1 <- ifelse(cart_rose1 == "1", "Yes", "No")
+resultat_cart_rose1 <- data.frame( ID = IDs_test, Exited = cart_rose1)
+write.csv(resultat_cart_rose1, "Resultat/resultat_cart_rose1.csv", row.names = FALSE)
+
+
+
+tree_rose <- rpart(Exited ~ ., data = train2_rose, cp = 0) 
+tree_rose <- prune(tree_rose, cp = 0.002166378) 
+
+cart_rose11 <- predict(tree_rose, newdata = test_kaggle, type='class')
+cart_rose11 <- ifelse(cart_rose11 == "1", "Yes", "No")
+resultat_cart_rose11 <- data.frame( ID = IDs_test, Exited = cart_rose11)
+write.csv(resultat_cart_rose1, "Resultat/resultat_cart_rose11.csv", row.names = FALSE)
