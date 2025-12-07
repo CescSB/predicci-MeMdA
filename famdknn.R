@@ -57,11 +57,11 @@ ctrl <- trainControl(
 test_kaggle_inicial <- read.csv("data/test.csv")
 IDs_test <- test_kaggle_inicial$ID
 
-#library(mice)
-#test_kaggle <- readRDS("test_kaggle_imp.rds")
-#test_kaggle <- complete(test_kaggle, action=10)
-#library(dplyr)
-#test_kaggle %>% select(-.imp, -.id)
+library(mice)
+test_kaggle <- readRDS("test_kaggle_imp.rds")
+test_kaggle <- complete(test_kaggle, action=10)
+library(dplyr)
+test_kaggle %>% select(-.imp, -.id)
 
 
 
@@ -166,12 +166,16 @@ write.csv(resultat_knn_famd_rose, "Resultat/resultat_knn_famd_rose.csv", row.nam
 #-----------------------------------------------------------------------------
 # MODEL 3: KNN EDA
 df4 <- data.frame(
+  ID=dades$ID,
   Age = dades$Age,
   Balance = dades$Balance,
   CreditScore = dades$CreditScore,
   EstimatedSalary = dades$EstimatedSalary,
   Exited = y
 )
+
+train41 <- dades[index, , drop=FALSE]
+test41 <- dades[-index, , drop=FALSE]
 
 train4 <- df4[index, , drop = FALSE]
 test4  <- df4[-index, , drop = FALSE]
@@ -218,16 +222,31 @@ knn_eda_rose <- train(
   preProcess = c("center", "scale")
 )
 
+# Train sense AR
 pred_knn_eda_rose_train <- predict(knn_eda_rose, newdata = train4_rose)
 (cm_train <- confusionMatrix(pred_knn_eda_rose_train, train4_rose$Exited, positive = "Exited1"))
 F1Score(cm_train)
 
+# Test amb AR
+detect_ar_split_idonly(test41)
+combine_ar_and_model(dades_ar_idonly, test4, knn_eda_rose)
+(cm_testf <- confusionMatrix(df_mod_ar$Prediccio, test4$Exited, positive = "Exited1"))
+F1Score(cm_testf)
+
+# Test sense AR
 pred_knn_eda_rose <- predict(knn_eda_rose, newdata = test4)
 (cm_knn_eda_rose <- confusionMatrix(pred_knn_eda_rose, test4$Exited, positive = "Exited1"))
 cm_knn_eda_rose
 F1Score(cm_knn_eda_rose)
 
-# TEST REAL:
+# TEST REAL AMB AR:
+detect_ar_split_idonly(test_kaggle)
+combine_ar_and_model(dades_ar_idonly, test_kaggle, knn_eda_rose)
+df_mod_ar$Prediccio <- ifelse(df_mod_ar$Prediccio == "Exited1", "Yes", "No")
+resultat_knn_eda_rose_ar <- data.frame( ID = df_mod_ar$ID, Exited = df_mod_ar$Prediccio)
+write.csv(resultat_knn_eda_rose_ar, "Resultat/resultat_knn_eda_rose_ar.csv", row.names = FALSE)
+
+
 test_knn_eda_rose <- predict(knn_eda_rose, newdata = test_kaggle)
 test_knn_eda_rose <- ifelse(test_knn_eda_rose == "Exited1", "Yes", "No")
 resultat_knn_eda_rose <- data.frame( ID = IDs_test, Exited = test_knn_eda_rose)

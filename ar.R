@@ -204,25 +204,33 @@ accuracy_per_AR
 
 
 
+
+
+
+
+
+
+
+
 # Funció definitiva
-detect_ar_split <- function(dades,
-                            label_fuga = "Exited1",
-                            label_stay = "Exited0") {
+detect_ar_split_idonly <- function(dades,
+                                   id_col = "ID",
+                                   label_fuga = "Exited1",
+                                   label_stay = "Exited0") {
   
   ## ============================================================
   ##                RULES FUGA (Exited = 1)
-  ##            Només AR 1 i AR 2 (3,4,5 eliminades)
   ## ============================================================
   
   mask_fuga <- (
-    # AR1: Age=[44,92], Gender=Female, IsActiveMember=0, NumOfProducts=1
+    # AR1
     dades$Age >= 44 & dades$Age <= 92 &
       dades$Gender == "Female" &
       dades$IsActiveMember == 0 &
       dades$NumOfProducts == 1
   ) |
     (
-      # AR2: Age=[44,92], Geography=Germany, NumOfProducts=1
+      # AR2
       dades$Age >= 44 & dades$Age <= 92 &
         dades$Geography == "Germany" &
         dades$NumOfProducts == 1
@@ -234,65 +242,55 @@ detect_ar_split <- function(dades,
   ## ============================================================
   
   mask_stay <- (
-    # AR6: Age=[32,37], Gender=Male, NumOfProducts=2
     dades$Age >= 32 & dades$Age <= 37 &
       dades$Gender == "Male" &
       dades$NumOfProducts == 2
   ) |
     (
-      # AR7: Age=[32,37], Geography=France, NumOfProducts=2
       dades$Age >= 32 & dades$Age <= 37 &
         dades$Geography == "France" &
         dades$NumOfProducts == 2
     ) |
     (
-      # AR8: Age=[32,37], ComplaintsCount=0, HasCrCard=1, NumOfProducts=2
       dades$Age >= 32 & dades$Age <= 37 &
         dades$ComplaintsCount == 0 &
         dades$HasCrCard == 1 &
         dades$NumOfProducts == 2
     ) |
     (
-      # AR9: Age=[18,32], Balance=[0,9.77e4], HasCrCard=1, NumOfProducts=2
       dades$Age >= 18 & dades$Age <= 32 &
         dades$Balance >= 0 & dades$Balance <= 9.77e4 &
         dades$HasCrCard == 1 &
         dades$NumOfProducts == 2
     ) |
     (
-      # AR10: Age=[32,37], Balance=[0,9.77e4], NumOfProducts=2
       dades$Age >= 32 & dades$Age <= 37 &
         dades$Balance >= 0 & dades$Balance <= 9.77e4 &
         dades$NumOfProducts == 2
     ) |
     (
-      # AR11: Balance=[0,9.77e4], Gender=Male, IsActiveMember=1, NumOfProducts=2
       dades$Balance >= 0 & dades$Balance <= 9.77e4 &
         dades$Gender == "Male" &
         dades$IsActiveMember == 1 &
         dades$NumOfProducts == 2
     ) |
     (
-      # AR12: Age=[32,37], HasCrCard=1, SavingsAccountFlag=1, NumOfProducts=2
       dades$Age >= 32 & dades$Age <= 37 &
         dades$HasCrCard == 1 &
         dades$SavingsAccountFlag == 1 &
         dades$NumOfProducts == 2
     ) |
     (
-      # AR13: Age=[18,32], EducationLevel=University, NumOfProducts=2
       dades$Age >= 18 & dades$Age <= 32 &
         dades$EducationLevel == "University" &
         dades$NumOfProducts == 2
     ) |
     (
-      # AR14: Age=[18,32], Geography=France, NumOfProducts=2
       dades$Age >= 18 & dades$Age <= 32 &
         dades$Geography == "France" &
         dades$NumOfProducts == 2
     ) |
     (
-      # AR15: Age=[18,32], Gender=Male, NumOfProducts=2
       dades$Age >= 18 & dades$Age <= 32 &
         dades$Gender == "Male" &
         dades$NumOfProducts == 2
@@ -305,17 +303,99 @@ detect_ar_split <- function(dades,
   
   mask_any <- mask_fuga | mask_stay
   
+  # Subdata només amb els seleccionats
   dades_ar <- dades[mask_any, , drop = FALSE]
   
-  ## Assignar Exited_AR segons fuga/stay
+  ## Assignació Exited_AR
   y <- character(sum(mask_any))
   y[mask_fuga[mask_any]] <- label_fuga
   y[mask_stay[mask_any] & !mask_fuga[mask_any]] <- label_stay
   
-  dades_ar$Exited_AR <- y
+  # Data frame final NOMÉS amb ID + Exited_AR
+  resultat <- data.frame(
+    ID = dades_ar[[id_col]],
+    Exited_AR = y
+  )
   
-  ## Opcional: guardar a l’Environment i retornar
-  dades_ar <<- dades_ar
-  return(dades_ar)
+  ## També el deixo al global si vols (com abans)
+  dades_ar_idonly <<- resultat
+  
+  return(resultat)
+}
+
+
+
+
+
+
+### Funció model i ar
+combine_ar_and_model <- function(df_ar,
+                                 dades,
+                                 model,
+                                 id_col = "ID",
+                                 pred_col_final = "Prediccio") {
+  # -------------------------------
+  # 1) IDs que ja tenen predicció per AR
+  # -------------------------------
+  ids_ar <- df_ar[[id_col]]
+  
+  # -------------------------------
+  # 2) Subconjunt de dades sense aquests IDs
+  # -------------------------------
+  mask_no_ar <- !(dades[[id_col]] %in% ids_ar)
+  dades_model <- dades[mask_no_ar, , drop = FALSE]
+  
+  # -------------------------------
+  # CAS ESPECIAL: només AR
+  # -------------------------------
+  if (nrow(dades_model) == 0) {
+    df_final <- data.frame(
+      ID = df_ar[[id_col]],
+      Prediccio = factor(df_ar[["Exited_AR"]])
+    )
+    df_final <- df_final[order(df_final$ID), ]
+    
+    assign("df_mod_ar", df_final, envir = .GlobalEnv)
+    
+    return(df_final)
+  }
+  
+  # -------------------------------
+  # 3) Predicció amb el model
+  # -------------------------------
+  preds_mod <- tryCatch(
+    predict(model, newdata = dades_model),
+    error = function(e) predict(model, newdata = dades_model, type = "response")
+  )
+  
+  df_mod <- data.frame(
+    ID = dades_model[[id_col]],
+    Exited_Mod = preds_mod
+  )
+  
+  # -------------------------------
+  # 4) Unificar en un sol data frame
+  # -------------------------------
+  df_ar_final <- data.frame(
+    ID = df_ar[[id_col]],
+    Prediccio = df_ar[["Exited_AR"]]
+  )
+  
+  df_mod_final <- data.frame(
+    ID = df_mod[[id_col]],
+    Prediccio = df_mod[["Exited_Mod"]]
+  )
+  
+  df_total <- rbind(df_ar_final, df_mod_final)
+  
+  # Converteix Prediccio a factor
+  df_total$Prediccio <- factor(df_total$Prediccio)
+  
+  df_total <- df_total[order(df_total$ID), ]
+  rownames(df_total) <- NULL
+  
+  assign("df_mod_ar", df_total, envir = .GlobalEnv)
+  
+  return(df_total)
 }
 
