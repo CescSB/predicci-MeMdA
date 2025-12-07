@@ -6,7 +6,6 @@ library(ggplot2)
 
 # 4.1 Preparació de variables (sense tocar objectes existents)
 dades = readRDS("dades.rds")
-dades = complete(dades, action = 10)
 
 
 target <- "Exited"
@@ -18,7 +17,7 @@ varNum <- names(clases)[clases %in% c("numeric","integer")]
 varCat <- names(clases)[clases %in% c("factor","character","logical")]
 
 # Exclou possibles identificadors si hi fossin
-drop <- c("Surname","ID",".imp",".id")
+drop <- c("Surname","ID")
 keep <- setdiff(c(varNum, varCat), drop)
 
 # 4.2 Discretització numèriques + i selecció de les vars 
@@ -71,12 +70,12 @@ ar_rules_keep <- apriori(
 ar_rules_keep <- ar_rules_keep[!is.redundant(ar_rules_keep)]
 ar_rules_keep <- sort(ar_rules_keep, by = "lift", decreasing = TRUE)
 
-# 4.5 Filtrat  (lift minim = 1.15 i comptatge min 50 obs)
+# 4.5 Filtrat  (lift minim = 1.15 i comptatge min 100 obs)
 ar_n <- length(ar_tr)
 if (length(ar_rules_fuga) > 0) {
   ar_qc <- quality(ar_rules_fuga)
   if (is.null(ar_qc$count)) ar_qc$count <- ar_qc$support * ar_n
-  ar_sel <- which(ar_qc$lift > 1.15 & ar_qc$count >= 50)
+  ar_sel <- which(ar_qc$lift > 1.15 & ar_qc$count >= 100)
   ar_rules_fuga_top <- if (length(ar_sel)) sort(ar_rules_fuga[ar_sel], by = "lift") else ar_rules_fuga
 } else {
   ar_rules_fuga_top <- ar_rules_fuga
@@ -85,7 +84,7 @@ if (length(ar_rules_fuga) > 0) {
 if (length(ar_rules_keep) > 0) {
   ar_qc_k <- quality(ar_rules_keep)
   if (is.null(ar_qc_k$count)) ar_qc_k$count <- ar_qc_k$support * ar_n
-  ar_sel_k <- which(ar_qc_k$lift > 1.15 & ar_qc_k$count >= 50)
+  ar_sel_k <- which(ar_qc_k$lift > 1.15 & ar_qc_k$count >= 100)
   ar_rules_keep_top <- if (length(ar_sel_k)) sort(ar_rules_keep[ar_sel_k], by = "lift") else ar_rules_keep
 } else {
   ar_rules_keep_top <- ar_rules_keep
