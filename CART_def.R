@@ -169,15 +169,6 @@ F1Score(cm_test2_rose)
 
 
 
-# ESTRATÈGIA 2 MILLOR, APLICAR AR APLICAR AR
-detect_ar_split_idonly(test)
-combine_ar_and_model(dades_ar_idonly, test, arbol_final)
-(cm_testf <- confusionMatrix(df_mod_ar$Prediccio, test$Exited, positive = "1"))
-F1Score(cm_testf)
-
-# No te sentit aplicarli AR a un CART
-
-
 
 # TEST KAGGLE
 test_kaggle_inicial <- read.csv("data/test.csv")
