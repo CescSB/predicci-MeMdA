@@ -215,8 +215,8 @@ accuracy_per_AR
 # Funció definitiva
 detect_ar_split_idonly <- function(dades,
                                    id_col = "ID",
-                                   label_fuga = "Exited1",
-                                   label_stay = "Exited0") {
+                                   label_fuga = "1", #Exited1 i en seguent Exited0 si knn
+                                   label_stay = "0") {
   
   ## ============================================================
   ##                RULES FUGA (Exited = 1)
@@ -364,7 +364,7 @@ combine_ar_and_model <- function(df_ar,
   # 3) Predicció amb el model
   # -------------------------------
   preds_mod <- tryCatch(
-    predict(model, newdata = dades_model),
+    predict(model, newdata = dades_model, type='class'), # lo de type class nomes quan cart
     error = function(e) predict(model, newdata = dades_model, type = "response")
   )
   

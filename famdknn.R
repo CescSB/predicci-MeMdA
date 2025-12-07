@@ -92,7 +92,7 @@ test_kaggle_famd <- new_coords[, colnames(trainX), drop = F]
 
 # Càlcul F1-Score
 F1Score<- function(cm) {
-  positive <- "Exited1"
+  positive <- "1" # Exited1 en knn
   levels <- rownames(cm$table)
   negative <- levels[levels != positive]
   TP <- cm$table[positive, positive]
