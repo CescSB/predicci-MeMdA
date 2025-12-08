@@ -63,7 +63,7 @@ test_kaggle %>% select(-.imp, -.id)
 
 pred_kaggle1 <- predict(caret.xgb, newdata = test_kaggle)
 resultat_xgb <- data.frame( ID = IDs_test, Exited = pred_kaggle1)
-write.csv(resultat_xgb_cart1, "Resultat/resultat_xgb.csv", row.names = FALSE)
+write.csv(resultat_xgb, "Resultat/resultat_xgb.csv", row.names = FALSE)
 
 
 
