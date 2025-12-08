@@ -147,4 +147,4 @@ x_kaggle$cart_prob <- prob_cart_kaggle
 
 pred_kaggle2 <- predict(caret.xgb_stacked, newdata = x_kaggle)
 resultat_xgb_cart1 <- data.frame( ID = IDs_test, Exited = pred_kaggle2)
-write.csv(resultat_xgb_cart1, "Resultat/resultat_xgb_cart1", row.names = FALSE)
+write.csv(resultat_xgb_cart1, "Resultat/resultat_xgb_cart1.csv", row.names = FALSE)
