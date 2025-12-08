@@ -51,6 +51,21 @@ pred_test1 <- predict(caret.xgb, newdata = test)
 (cm_test1 <- confusionMatrix(pred_test1, test$Exited, positive="1"))
 F1Score(cm_test1)
 
+# KAGGLE
+test_kaggle_inicial <- read.csv("data/test.csv")
+IDs_test <- test_kaggle_inicial$ID
+
+library(mice)
+test_kaggle <- readRDS("test_kaggle_imp.rds")
+test_kaggle <- complete(test_kaggle, action=10)
+library(dplyr)
+test_kaggle %>% select(-.imp, -.id)
+
+pred_kaggle1 <- predict(caret.xgb, newdata = test_kaggle)
+resultat_xgb <- data.frame( ID = IDs_test, Exited = pred_kaggle1)
+write.csv(resultat_xgb_cart1, "Resultat/resultat_xgb.csv", row.names = FALSE)
+
+
 
 
 
