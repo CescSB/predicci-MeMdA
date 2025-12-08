@@ -7,6 +7,7 @@ library(caret)
 library(pROC)
 library(tree)
 library(printr)
+library(ROSE)
 
 # Lectura dades
 mydata <- readRDS("dades.rds")
@@ -16,9 +17,9 @@ set.seed(123)
 ind <- sample(1:nrow(mydata), 0.7*nrow(mydata))
 train <- mydata[ind,]
 test <- mydata[-ind,]
+train2 <- subset(train, select = -c(ID, Surname))
 
 # ESTRATÈGIA 1: CP = 0 I MIRRAR QUINA ÉS MILLOR PODA
-train2 <- subset(train, select = -c(ID, Surname))
 tree <- rpart(Exited ~ ., data = train2, cp = 0) 
 printcp(tree) # BUSCAR VALOR XERROR MES PETIT, XERROR = 0.757731959  I EL SEU SD = 0.025642400  
 plotcp(tree)
@@ -91,13 +92,11 @@ p2a <- predict(arbol_final, test, type = 'class')
 
 
 # CAL APLICAR ROSE
-# ESTRATÈGIA 1: CP = 0 I MIRRAR QUINA ÉS MILLOR PODA
-
 set.seed(123)
 train2_rose <- ROSE(Exited ~ ., data = train2, seed = 123)$data
 train2_rose$Exited <- factor(train2_rose$Exited, levels = levels(train2$Exited))
 
-
+# ESTRATÈGIA 1: CP = 0 I MIRRAR QUINA ÉS MILLOR PODA
 tree_rose <- rpart(Exited ~ ., data = train2_rose, cp = 0) 
 printcp(tree_rose) # BUSCAR VALOR XERROR MES PETIT, XERROR = 0.478769497 I EL SEU SD = 0.012573017  
 plotcp(tree_rose)
