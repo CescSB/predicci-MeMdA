@@ -68,7 +68,73 @@ resultat_xgb <- data.frame( ID = IDs_test, Exited = pred_kaggle1)
 write.csv(resultat_xgb, "Resultat/resultat_xgb.csv", row.names = FALSE)
 
 
-# Tunejant el model amb altres paràmetres
+
+
+
+# TUNEJAR XGBoost AMB GAMMA I MINCHILD ÒPTIMS
+
+prova_gamma_minchild <- function(train2_rose, test, trControl) {
+  gamma_vals <- seq(0, 3, by = 0.5) 
+  min_child_vals <- seq(1:10)
+
+  grid <- expand.grid(
+    nrounds          = 50,
+    max_depth        = 2,
+    eta              = 0.3,
+    gamma            = gamma_vals,
+    colsample_bytree = 0.8,
+    min_child_weight = min_child_vals,
+    subsample        = 1
+  )
+
+  res_list <- vector("list", nrow(grid))
+  
+  for (i in seq_len(nrow(grid))) {
+    cat("Entrenant model", i, "de", nrow(grid),
+        " gamma =", grid$gamma[i],
+        " min_child_weight =", grid$min_child_weight[i], "\n")
+    
+    set.seed(123) 
+    
+    xgb_i <- train(
+      Exited ~ .,
+      data      = train2_rose,
+      method    = "xgbTree",
+      trControl = trControl,
+      tuneGrid  = grid[i, , drop = FALSE],
+      verbosity = 0
+    )
+    
+    # Predicció sobre el TEST original (sense ROSE)
+    pred_test <- predict(xgb_i, newdata = test)
+    cm_test   <- confusionMatrix(pred_test, test$Exited, positive = "1")
+    f1_test   <- F1Score(cm_test)
+    
+    # Desa resultats d’aquesta combinació
+    res_list[[i]] <- data.frame(
+      gamma            = grid$gamma[i],
+      min_child_weight = grid$min_child_weight[i],
+      F1_test          = f1_test,
+      Accuracy_test    = cm_test$overall["Accuracy"],
+      Kappa_test       = cm_test$overall["Kappa"],
+      row.names = NULL
+    )
+  }
+  
+  res <- do.call(rbind, res_list)
+  
+  # Ordenem per F1 de major a menor
+  res_ordenat <- res[order(-res$F1_test), ]
+  
+  resultats_gamma_min <<-res_ordenat
+  
+  return(res_ordenat)
+}
+
+prova_gamma_minchild(train2_rose, test, trControl)
+
+
+# Tunejant amb gamma i min optims
 grid2 <- data.frame(
   nrounds          = 50,
   max_depth        = 2,
@@ -98,6 +164,24 @@ F1Score(cm_train12)
 pred_test12 <- predict(xgb2, newdata = test)
 (cm_test12 <- confusionMatrix(pred_test12, test$Exited, positive="1"))
 F1Score(cm_test12)
+
+# KAGGLE
+test_kaggle_inicial <- read.csv("data/test.csv")
+IDs_test <- test_kaggle_inicial$ID
+
+library(mice)
+test_kaggle <- readRDS("test_kaggle_imp.rds")
+test_kaggle <- complete(test_kaggle, action=10)
+library(dplyr)
+test_kaggle %>% select(-.imp, -.id)
+
+pred_kaggle2 <- predict(xgb2, newdata = test_kaggle)
+pred_kaggle2 <- ifelse(pred_kaggle2 == "1", "Yes", "No")
+resultat_xgb2 <- data.frame( ID = IDs_test, Exited = pred_kaggle2)
+write.csv(resultat_xgb, "Resultat/resultat_xgb_gamma_min_opt.csv", row.names = FALSE)
+
+
+
 
 
 
