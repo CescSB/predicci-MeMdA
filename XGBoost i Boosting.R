@@ -25,6 +25,7 @@ trControl <- trainControl(
   number = 5,        
   verboseIter = FALSE)
 
+set.seed(123)
 caret.xgb <- train(
   Exited ~ .,           
   data      = train2_rose,
@@ -33,13 +34,13 @@ caret.xgb <- train(
   verbosity = 0
 )
 
-caret.xgb
+caret.xgb$results[order(-caret.xgb$results$Kappa), ]
 caret.xgb$bestTune
 
 ## Per jugar amb paràmetres:
 ## En un següent pas, podríem seleccionar gamma i min_child_weight
-## mantenint fixos nrounds = 50, max_depth = 2, eta = 0.4,
-## colsample_bytree = 0.6 i subsample = 1.
+## mantenint fixos nrounds = 50, max_depth = 2, eta = 0.3,
+## colsample_bytree = 0.8 i subsample = 1.
 
 # Train sense ROSE
 pred_train1 <- predict(caret.xgb, newdata = train)
@@ -62,9 +63,41 @@ library(dplyr)
 test_kaggle %>% select(-.imp, -.id)
 
 pred_kaggle1 <- predict(caret.xgb, newdata = test_kaggle)
+pred_kaggle1 <- ifelse(pred_kaggle1 == "1", "Yes", "No")
 resultat_xgb <- data.frame( ID = IDs_test, Exited = pred_kaggle1)
 write.csv(resultat_xgb, "Resultat/resultat_xgb.csv", row.names = FALSE)
 
+
+# Tunejant el model amb altres paràmetres
+grid2 <- data.frame(
+  nrounds          = 50,
+  max_depth        = 2,
+  eta              = 0.3,
+  gamma            = 0.5,
+  colsample_bytree = 0.8,
+  min_child_weight = 3,
+  subsample        = 1
+)
+
+set.seed(123)
+xgb2 <- train(
+  Exited ~ .,
+  data      = train2_rose,
+  method    = "xgbTree",
+  trControl = trControl,  
+  tuneGrid  = grid2,
+  verbosity = 0
+)
+
+# Train sense ROSE
+pred_train12 <- predict(xgb2, newdata = train)
+(cm_train12 <- confusionMatrix(pred_train12, train$Exited, positive="1"))
+F1Score(cm_train12)
+
+# Test sense AR (no te sentit aplicarli)
+pred_test12 <- predict(xgb2, newdata = test)
+(cm_test12 <- confusionMatrix(pred_test12, test$Exited, positive="1"))
+F1Score(cm_test12)
 
 
 
