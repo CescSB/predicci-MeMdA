@@ -6,6 +6,8 @@ library(xgboost)
 # Lectura dades
 set.seed(123)
 dades <- readRDS("dades.rds")
+
+
 nobs   <- nrow(dades)
 itrain <- sample(nobs, 0.7 * nobs)
 train <- dades[itrain, ]
