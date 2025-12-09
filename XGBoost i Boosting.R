@@ -79,10 +79,10 @@ prova_gamma_minchild <- function(train2_rose, test, trControl) {
 
   grid <- expand.grid(
     nrounds          = 50,
-    max_depth        = 2,
-    eta              = 0.3,
+    max_depth        = 2, # 3 en el segon
+    eta              = 0.3, # 0.4
     gamma            = gamma_vals,
-    colsample_bytree = 0.8,
+    colsample_bytree = 0.8, # 0.6
     min_child_weight = min_child_vals,
     subsample        = 1
   )
@@ -145,6 +145,36 @@ grid2 <- data.frame(
   subsample        = 1
 )
 
+grid22 <- data.frame(
+  nrounds          = 50,
+  max_depth        = 2,
+  eta              = 0.3,
+  gamma            = 1,
+  colsample_bytree = 0.8,
+  min_child_weight = 1,
+  subsample        = 1
+)
+
+grid3 <- data.frame(
+  nrounds          = 50,
+  max_depth        = 3,
+  eta              = 0.4,
+  gamma            = 3,
+  colsample_bytree = 0.6,
+  min_child_weight = 8,
+  subsample        = 1
+)
+
+grid4 <- data.frame( # emana del segon millor la segona versio
+  nrounds          = 50,
+  max_depth        = 3,
+  eta              = 0.4,
+  gamma            = 1,
+  colsample_bytree = 0.6,
+  min_child_weight = 2,
+  subsample        = 1
+)  
+  
 set.seed(123)
 xgb2 <- train(
   Exited ~ .,
@@ -155,17 +185,70 @@ xgb2 <- train(
   verbosity = 0
 )
 
-# Train sense ROSE
+xgb22 <- train(
+  Exited ~ .,
+  data      = train2_rose,
+  method    = "xgbTree",
+  trControl = trControl,  
+  tuneGrid  = grid22,
+  verbosity = 0
+)
+
+xgb3 <- train(
+  Exited ~ .,
+  data      = train2_rose,
+  method    = "xgbTree",
+  trControl = trControl,  
+  tuneGrid  = grid3,
+  verbosity = 0
+)
+
+xgb4 <- train(
+  Exited ~ .,
+  data      = train2_rose,
+  method    = "xgbTree",
+  trControl = trControl,  
+  tuneGrid  = grid4,
+  verbosity = 0
+)
+
+# Train sense ROSE dels 4 tunejos
 pred_train12 <- predict(xgb2, newdata = train)
 (cm_train12 <- confusionMatrix(pred_train12, train$Exited, positive="1"))
 F1Score(cm_train12)
 
-# Test sense AR (no te sentit aplicarli)
+pred_train122 <- predict(xgb22, newdata = train)
+(cm_train122 <- confusionMatrix(pred_train122, train$Exited, positive="1"))
+F1Score(cm_train122)
+
+pred_train13 <- predict(xgb3, newdata = train)
+(cm_train13 <- confusionMatrix(pred_train13, train$Exited, positive="1"))
+F1Score(cm_train13)
+
+pred_train14 <- predict(xgb4, newdata = train)
+(cm_train14 <- confusionMatrix(pred_train14, train$Exited, positive="1"))
+F1Score(cm_train14)
+
+
+# Test sense AR (no te sentit aplicarli) dels 4 tunejos
 pred_test12 <- predict(xgb2, newdata = test)
 (cm_test12 <- confusionMatrix(pred_test12, test$Exited, positive="1"))
 F1Score(cm_test12)
 
-# KAGGLE
+pred_test122 <- predict(xgb22, newdata = test)
+(cm_test122 <- confusionMatrix(pred_test122, test$Exited, positive="1"))
+F1Score(cm_test122)
+
+pred_test13 <- predict(xgb3, newdata = test)
+(cm_test13 <- confusionMatrix(pred_test13, test$Exited, positive="1"))
+F1Score(cm_test13)
+
+pred_test14 <- predict(xgb4, newdata = test)
+(cm_test14 <- confusionMatrix(pred_test14, test$Exited, positive="1"))
+F1Score(cm_test14)
+
+
+# KAGGLE dels 4 tunejos
 test_kaggle_inicial <- read.csv("data/test.csv")
 IDs_test <- test_kaggle_inicial$ID
 
@@ -180,9 +263,20 @@ pred_kaggle2 <- ifelse(pred_kaggle2 == "1", "Yes", "No")
 resultat_xgb2 <- data.frame( ID = IDs_test, Exited = pred_kaggle2)
 write.csv(resultat_xgb2, "Resultat/resultat_xgb_gamma_min_opt.csv", row.names = FALSE)
 
+pred_kaggle22 <- predict(xgb22, newdata = test_kaggle)
+pred_kaggle22 <- ifelse(pred_kaggle22 == "1", "Yes", "No")
+resultat_xgb22 <- data.frame( ID = IDs_test, Exited = pred_kaggle22)
+write.csv(resultat_xgb22, "Resultat/resultat_xgb_gamma_min_opt1.csv", row.names = FALSE)
 
+pred_kaggle3 <- predict(xgb3, newdata = test_kaggle)
+pred_kaggle3 <- ifelse(pred_kaggle3 == "1", "Yes", "No")
+resultat_xgb3 <- data.frame( ID = IDs_test, Exited = pred_kaggle3)
+write.csv(resultat_xgb3, "Resultat/resultat_xgb_gamma_min_opt2.csv", row.names = FALSE)
 
-
+pred_kaggle4 <- predict(xgb4, newdata = test_kaggle)
+pred_kaggle4 <- ifelse(pred_kaggle4 == "1", "Yes", "No")
+resultat_xgb4 <- data.frame( ID = IDs_test, Exited = pred_kaggle4)
+write.csv(resultat_xgb4, "Resultat/resultat_xgb_gamma_min_opt3.csv", row.names = FALSE)
 
 
 
