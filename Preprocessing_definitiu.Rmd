@@ -395,7 +395,7 @@ meth[ids] <- ""
 set.seed(500)  # replicabilitat
 imp <- mice::mice(
   data   = dades,
-  m      = 10,   
+  m      = 5,   
   maxit  = 10,       
   method = meth,
   ridge = 1e-3,
