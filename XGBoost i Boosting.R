@@ -178,7 +178,7 @@ test_kaggle %>% select(-.imp, -.id)
 pred_kaggle2 <- predict(xgb2, newdata = test_kaggle)
 pred_kaggle2 <- ifelse(pred_kaggle2 == "1", "Yes", "No")
 resultat_xgb2 <- data.frame( ID = IDs_test, Exited = pred_kaggle2)
-write.csv(resultat_xgb, "Resultat/resultat_xgb_gamma_min_opt.csv", row.names = FALSE)
+write.csv(resultat_xgb2, "Resultat/resultat_xgb_gamma_min_opt.csv", row.names = FALSE)
 
 
 
