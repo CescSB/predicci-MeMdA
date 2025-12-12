@@ -44,7 +44,7 @@ caret.xgb$bestTune
 ## mantenint fixos nrounds = 50, max_depth = 2, eta = 0.3,
 ## colsample_bytree = 0.8 i subsample = 1.
 
-# Train sense ROSE
+# Train sense AR
 pred_train1 <- predict(caret.xgb, newdata = train)
 (cm_train1 <- confusionMatrix(pred_train1, train$Exited, positive="1"))
 F1Score(cm_train1)
