@@ -124,6 +124,8 @@ rf.caret <- train(
   tuneGrid = data.frame(mtry = 4) 
 )
 
+
+
 # Train rf mtry opt
 pred_train4 <- predict(rf.caret, newdata = train)
 (cm_train4 <- confusionMatrix(pred_train4, train$Exited, positive="1"))
@@ -224,3 +226,47 @@ pred_kaggle5 <- factor(pred_kaggle5, levels = levels(test$Exited))
 pred_kaggle5 <- ifelse(pred_kaggle5 == "1", "Yes", "No")
 resultat_rf_no_bal_tun_mtry_threshold <- data.frame( ID = IDs_test, Exited = pred_kaggle5)
 write.csv(resultat_rf_no_bal_tun_mtry_threshold, "Resultat/resultat_rf_no_bal_tun_mtry_threshold.csv", row.names = FALSE)
+
+
+
+# Intent millorar millor model (rf.caret)
+# El mateix pero intent tuneig threshold (cal executar funcio de mes avall)
+# prob opt per millorar F1
+
+prob_1_rf.caret <- predict(rf.caret, newdata = train, type = "prob")[, "1"]
+obs <- train$Exited
+
+F1_values <- sapply(thresholds,
+                    F1_from_threshold,
+                    prob = prob_1_rf.caret,
+                    obs  = obs,
+                    positive = "1")
+best_index_rf.caret <- which.max(F1_values)
+best_threshold_rf.caret <- thresholds[best_index_rf.caret]
+best_F1_rf.caret <- F1_values[best_index_rf.caret]
+
+best_threshold_rf.caret
+best_F1_rf.caret
+
+# Train
+prob_1_train_rf.caret <- predict(rf.caret, newdata = train, type = "prob")[, "1"]
+pred_train6 <- ifelse(prob_1_train_rf.caret >= best_threshold_rf.caret, "1", "0")
+pred_train6 <- factor(pred_train6, levels = levels(test$Exited))
+(cm_train6 <- confusionMatrix(pred_train6, train$Exited, positive="1"))
+F1Score(cm_train6)
+
+# Test
+prob_1_test_rf.caret <- predict(rf.caret, newdata = test, type = "prob")[, "1"]
+pred_test6 <- ifelse(prob_1_test_rf.caret >= best_threshold_rf.caret, "1", "0")
+pred_test6 <- factor(pred_test6, levels = levels(test$Exited))
+(cm_test6 <- confusionMatrix(pred_test6, test$Exited, positive="1"))
+F1Score(cm_test6)
+
+# Test Kaggle 
+prob_1_kaggle_rf.caret <- predict(rf.caret, newdata = test_kaggle, type = "prob")[, "1"]
+pred_kaggle6 <- ifelse(prob_1_kaggle_rf.caret >= best_threshold_rf.caret, "1", "0")
+pred_kaggle6 <- factor(pred_kaggle6, levels = levels(test$Exited))
+pred_kaggle6 <- ifelse(pred_kaggle6 == "1", "Yes", "No")
+resultat_rf_best_thresh <- data.frame( ID = IDs_test, Exited = pred_kaggle6)
+write.csv(resultat_rf_best_thresh, "Resultat/resultat_rf_best_thresh.csv", row.names = FALSE)
+
