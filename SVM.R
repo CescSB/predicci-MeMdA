@@ -89,6 +89,14 @@ svm_r_est <- svm_r_est$best.model
 
 
 
+svm_rad_norose <- tune("svm", Exited ~ ., data = train2, kernel = 'radial',
+                ranges = list(cost = c(0.01, 0.1, 1, 2),
+                              gamma = c(0.5, 1, 2)))
+summary(svm_rad_norose)
+svm_rad_norose$best.parameters
+svm_r_norose <- svm_rad_norose$best.model
+
+
 
 
 
@@ -155,6 +163,22 @@ precisio <- TP / (TP + FP)
 
 pred_train1_est <- predict(svm_r_est, train2_est)
 (t2<-table(pred_train1_est, train2_est$Exited))
+TN <- t2["0", "0"]
+FN <- t2["0", "1"]
+FP <- t2["1", "0"]
+TP <- t2["1", "1"]
+(sensibilitat <- TP / (TP + FN))
+(especificitat <- TN / (TN + FP))
+precisio <- TP / (TP + FP)
+(F1 <- 2 * (precisio * sensibilitat) / (precisio + sensibilitat))
+
+
+
+
+
+
+pred_trainr_norose <- predict(svm_r_norose, train2)
+(t2<-table(pred_trainr_norose, train2$Exited))
 TN <- t2["0", "0"]
 FN <- t2["0", "1"]
 FP <- t2["1", "0"]
@@ -238,6 +262,20 @@ TP <- t2["1", "1"]
 (especificitat <- TN / (TN + FP))
 precisio <- TP / (TP + FP)
 (F1 <- 2 * (precisio * sensibilitat) / (precisio + sensibilitat))
+
+
+
+pred_testr_norose <- predict(svm_r_norose, test2)
+(t2<-table(pred_testr_norose, test2$Exited))
+TN <- t2["0", "0"]
+FN <- t2["0", "1"]
+FP <- t2["1", "0"]
+TP <- t2["1", "1"]
+(sensibilitat <- TP / (TP + FN))
+(especificitat <- TN / (TN + FP))
+precisio <- TP / (TP + FP)
+(F1 <- 2 * (precisio * sensibilitat) / (precisio + sensibilitat))
+
 
 
 
