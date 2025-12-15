@@ -270,3 +270,134 @@ pred_kaggle6 <- ifelse(pred_kaggle6 == "1", "Yes", "No")
 resultat_rf_best_thresh <- data.frame( ID = IDs_test, Exited = pred_kaggle6)
 write.csv(resultat_rf_best_thresh, "Resultat/resultat_rf_best_thresh.csv", row.names = FALSE)
 
+
+
+
+
+# Prova amb SMOTE
+library(recipes)
+library(themis)
+
+table(train2$Exited)
+prop.table(table(train2$Exited))
+
+set.seed(123)
+
+rec <- recipe(Exited ~ ., data = train2) %>%
+  step_dummy(all_nominal_predictors()) %>%
+  step_smote(Exited)
+
+prep_rec <- prep(rec, training = train2)
+
+train2_smote <- as.data.frame(bake(prep_rec, new_data = NULL))
+
+table(train2_smote$Exited)
+
+undummy_factor <- function(df, prefix, orig_levels, ref_level = orig_levels[1], sep = "_") {
+  
+  cols <- grep(paste0("^", prefix, sep), names(df), value = TRUE)
+  if (length(cols) == 0) stop("No s'han trobat dummies per a: ", prefix)
+  
+  M <- as.matrix(df[, cols, drop = FALSE])
+  
+  # guanyador (pot ser decimal per SMOTE)
+  winner_idx <- apply(M, 1, which.max)
+  winner_col <- cols[winner_idx]
+  winner_suffix <- sub(paste0("^", prefix, sep), "", winner_col)
+  
+  # cas totes zero → referència
+  all_zero <- apply(M, 1, function(x) all(is.na(x) | abs(x) < 1e-12))
+  winner_suffix[all_zero] <- make.names(ref_level)
+  
+  # map nom net (recipes) → nivell original
+  clean_levels <- make.names(orig_levels)
+  idx <- match(winner_suffix, clean_levels)
+  
+  out <- orig_levels[idx]
+  out[is.na(out)] <- ref_level
+  
+  factor(out, levels = orig_levels)
+}
+
+
+restore_categoricals_from_dummies <- function(df, spec, sep = "_") {
+  out <- df
+  
+  for (var in names(spec)) {
+    lvls <- spec[[var]]$levels
+    ref  <- spec[[var]]$ref
+    
+    out[[var]] <- undummy_factor(
+      df = out,
+      prefix = var,
+      orig_levels = lvls,
+      ref_level = ref,
+      sep = sep
+    )
+    
+    dummy_cols <- grep(paste0("^", var, sep), names(out), value = TRUE)
+    out[dummy_cols] <- NULL
+  }
+  
+  out
+}
+
+make_spec <- function(df, response = "Exited") {
+  facs <- names(df)[sapply(df, is.factor)]
+  facs <- setdiff(facs, response)  # treu la variable resposta
+  
+  spec <- lapply(facs, function(v) {
+    lv <- levels(df[[v]])
+    list(levels = lv, ref = lv[1])
+  })
+  names(spec) <- facs
+  spec
+}
+
+spec <- make_spec(train2, response = "Exited")
+
+train2_smote <- restore_categoricals_from_dummies(train2_smote, spec)
+
+
+# Tunejant mtry
+mtry.class <- sqrt(ncol(train2_smote) - 1)
+tuneGrid <- data.frame(mtry = floor(c(mtry.class/2, mtry.class, 2*mtry.class)))
+tuneGrid
+tuneGrid <- data.frame(mtry = c(floor(c(mtry.class/2, mtry.class, 2*mtry.class)),10,15,20))
+tuneGrid
+
+set.seed(123)
+rf.caret.smote <- train(Exited ~ ., data = train2_smote ,method = "rf",tuneGrid = tuneGrid)
+plot(rf.caret)
+rf.caret
+
+rf.caret.smote <- train(
+  Exited ~ .,
+  data = train2_smote,
+  method = "rf",
+  tuneGrid = data.frame(mtry = 8) 
+)
+
+rf.caret.smote2 <- train(
+  Exited ~ .,
+  data = train2_smote,
+  method = "rf",
+  tuneGrid = data.frame(mtry = 4) 
+)
+
+# Train rf mtry opt
+pred_train_smote2 <- predict(rf.caret.smote2, newdata = train)
+(cm_train_smote2 <- confusionMatrix(pred_train_smote2, train$Exited, positive="1"))
+F1Score(cm_train_smote2)
+
+# Test rf mtry opt
+pred_test_smote2 <- predict(rf.caret.smote2, newdata = test)
+(cm_test_smote2 <- confusionMatrix(pred_test_smote2, test$Exited, positive="1"))
+F1Score(cm_test_smote2)
+
+# Test kaggle rf mtry opt
+pred_kaggle_smote2 <- predict(rf.caret.smote2, newdata = test_kaggle)
+pred_kaggle_smote2 <- ifelse(pred_kaggle_smote2 == "1", "Yes", "No")
+resultat_rf_mtry_smote2 <- data.frame( ID = IDs_test, Exited = pred_kaggle_smote2)
+write.csv(resultat_rf_mtry_smote2, "Resultat/resultat_rf_mtry4_smote.csv", row.names = FALSE)
+

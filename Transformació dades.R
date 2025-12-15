@@ -52,3 +52,25 @@ dades_trans[vars_log_scale] <- scale(log(dades[vars_log_scale] + 1))
 rm(vars_scale, vars_log_scale, varNum2, dades)
 
 saveRDS(dades_trans, "dades_trans.rds")
+
+trans <- function(data) {
+  
+  vars_scale <- c(
+    "Tenure", "NetPromoterScore", "TransactionFrequency",
+    "EstimatedSalary", "DigitalEngagementScore",
+    "CreditScore", "Balance"
+  )
+  
+  vars_log_scale <- c("Age", "AvgTransactionAmount")
+  
+  data_out <- data
+  
+  # Escalat normal
+  data_out[vars_scale] <- scale(data_out[vars_scale])
+  
+  # Log + scale
+  data_out[vars_log_scale] <- scale(log(data_out[vars_log_scale] + 1))
+  
+  return(data_out)
+}
+
