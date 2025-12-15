@@ -112,7 +112,7 @@ FP <- t2["1", "0"]
 TP <- t2["1", "1"]
 (sensibilitat <- TP / (TP + FN))
 (especificitat <- TN / (TN + FP))
-precisio <- TP / (TP + FP)
+(precisio <- TP / (TP + FP))
 (F1 <- 2 * (precisio * sensibilitat) / (precisio + sensibilitat))
 
 
@@ -126,7 +126,7 @@ FP <- t2["1", "0"]
 TP <- t2["1", "1"]
 (sensibilitat <- TP / (TP + FN))
 (especificitat <- TN / (TN + FP))
-precisio <- TP / (TP + FP)
+(precisio <- TP / (TP + FP))
 (F1 <- 2 * (precisio * sensibilitat) / (precisio + sensibilitat))
 
 
@@ -273,7 +273,7 @@ FP <- t2["1", "0"]
 TP <- t2["1", "1"]
 (sensibilitat <- TP / (TP + FN))
 (especificitat <- TN / (TN + FP))
-precisio <- TP / (TP + FP)
+(precisio <- TP / (TP + FP))
 (F1 <- 2 * (precisio * sensibilitat) / (precisio + sensibilitat))
 
 
