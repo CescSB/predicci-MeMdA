@@ -112,6 +112,9 @@ tuneGrid
 tuneGrid <- data.frame(mtry = c(floor(c(mtry.class/2, mtry.class, 2*mtry.class)),10,12,14,16,18,20))
 tuneGrid
 
+#set.seed(683167750)
+#set.seed(333)
+#set.seed(935000)
 set.seed(123)
 rf.caret <- train(Exited ~ ., data = train2_rose ,method = "rf",tuneGrid = tuneGrid)
 plot(rf.caret)
@@ -401,3 +404,178 @@ pred_kaggle_smote2 <- ifelse(pred_kaggle_smote2 == "1", "Yes", "No")
 resultat_rf_mtry_smote2 <- data.frame( ID = IDs_test, Exited = pred_kaggle_smote2)
 write.csv(resultat_rf_mtry_smote2, "Resultat/resultat_rf_mtry4_smote.csv", row.names = FALSE)
 
+
+
+
+
+
+set.seed(935000)
+rf.carets1 <- train(
+  Exited ~ .,
+  data = train2_rose,
+  method = "rf",
+  tuneGrid = data.frame(mtry = 4) 
+)
+
+
+
+# Train rf mtry opt
+pred_trains1 <- predict(rf.carets1, newdata = train)
+(cm_trains1 <- confusionMatrix(pred_trains1, train$Exited, positive="1"))
+F1Score(cm_trains1)
+
+# Test rf mtry opt
+pred_tests1 <- predict(rf.carets1, newdata = test)
+(cm_tests1 <- confusionMatrix(pred_tests1, test$Exited, positive="1"))
+F1Score(cm_tests1)
+
+# Test kaggle rf mtry opt
+pred_kaggles1 <- predict(rf.carets1, newdata = test_kaggle)
+pred_kaggles1 <- ifelse(pred_kaggles1 == "1", "Yes", "No")
+resultat_rf_mtrys1 <- data.frame( ID = IDs_test, Exited = pred_kaggles1)
+write.csv(resultat_rf_mtrys1, "Resultat/resultat_rf_mtry_sem_pedupto.csv", row.names = FALSE)
+
+
+
+
+
+
+set.seed(683167750)
+rf.carets2 <- train(
+  Exited ~ .,
+  data = train2_rose,
+  method = "rf",
+  tuneGrid = data.frame(mtry = 4) 
+)
+
+
+
+# Train rf mtry opt
+pred_trains2 <- predict(rf.carets2, newdata = train)
+(cm_trains2 <- confusionMatrix(pred_trains2, train$Exited, positive="1"))
+F1Score(cm_trains2)
+
+# Test rf mtry opt
+pred_tests2 <- predict(rf.carets2, newdata = test)
+(cm_tests2 <- confusionMatrix(pred_tests2, test$Exited, positive="1"))
+F1Score(cm_tests2)
+
+# Test kaggle rf mtry opt
+pred_kaggles2 <- predict(rf.carets2, newdata = test_kaggle)
+pred_kaggles2 <- ifelse(pred_kaggles2 == "1", "Yes", "No")
+resultat_rf_mtrys2 <- data.frame( ID = IDs_test, Exited = pred_kaggles2)
+write.csv(resultat_rf_mtrys2, "Resultat/resultat_rf_mtry_sem_tlfyer.csv", row.names = FALSE)
+
+
+
+
+
+
+
+
+# Provar semillas
+provar_seeds_rf <- function(
+    seeds = 1:10,
+    train2_rose,
+    train,
+    test,
+    mtry = 4
+) {
+  
+  resultats <- data.frame(
+    seed = integer(),
+    F1_train = numeric(),
+    F1_test  = numeric()
+  )
+  
+  for (s in seeds) {
+    set.seed(s)
+    
+    rf.caret <- train(
+      Exited ~ .,
+      data = train2_rose,
+      method = "rf",
+      tuneGrid = data.frame(mtry = mtry)
+    )
+    
+    # Train
+    pred_train <- predict(rf.caret, newdata = train)
+    cm_train <- confusionMatrix(pred_train, train$Exited, positive = "1")
+    f1_train <- F1Score(cm_train)
+    
+    # Test
+    pred_test <- predict(rf.caret, newdata = test)
+    cm_test <- confusionMatrix(pred_test, test$Exited, positive = "1")
+    f1_test <- F1Score(cm_test)
+    
+    resultats <- rbind(
+      resultats,
+      data.frame(
+        seed = s,
+        F1_train = f1_train,
+        F1_test  = f1_test
+      )
+    )
+  }
+  
+  # Ordenar de millor test a pitjor
+  resultats[order(-resultats$F1_test), ]
+}
+
+resultats_seeds <- provar_seeds_rf(
+  seeds = 3:10,
+  train2_rose = train2_rose,
+  train = train,
+  test = test,
+  mtry = 4
+)
+
+resultats_seeds
+
+resultats_seeds2 <- provar_seeds_rf(
+  seeds = c(67676767,983731,16122025,12112004,67,149771,800398,9112001,290622,29062022),
+  train2_rose = train2_rose,
+  train = train,
+  test = test,
+  mtry = 4
+)
+
+resultats_seeds2  
+
+resultats_seeds3 <- provar_seeds_rf(
+  seeds = c(64,88,0512,1314,1988,73745,1781,1637,11,22,33,44,55,66,77,26,99,111,26091889,222,4444,745,134,124,122,231,3141592,56789,9090,9191,6767,12345,12,13216,7374,737444,737443,9036,8173,7456,8270,2519,47294,9011,11111,22222,33333,44444,55555,66666,77777,88888,99999),
+  train2_rose = train2_rose,
+  train = train,
+  test = test,
+  mtry = 4
+)
+
+resultats_seeds3  
+
+
+
+set.seed(3)
+rf.carets3 <- train(
+  Exited ~ .,
+  data = train2_rose,
+  method = "rf",
+  tuneGrid = data.frame(mtry = 4) 
+)
+
+
+
+# Train rf mtry opt
+pred_trains3 <- predict(rf.carets3, newdata = train)
+(cm_trains3 <- confusionMatrix(pred_trains3, train$Exited, positive="1"))
+F1Score(cm_trains3)
+
+# Test rf mtry opt
+pred_tests3 <- predict(rf.carets3, newdata = test)
+(cm_tests3 <- confusionMatrix(pred_tests3, test$Exited, positive="1"))
+F1Score(cm_tests3)
+
+# Test kaggle rf mtry opt
+pred_kaggles3 <- predict(rf.carets3, newdata = test_kaggle)
+pred_kaggles3 <- ifelse(pred_kaggles3 == "1", "Yes", "No")
+resultat_rf_mtrys3 <- data.frame( ID = IDs_test, Exited = pred_kaggles3)
+write.csv(resultat_rf_mtrys3, "Resultat/resultat_rf_mtry_sem_3.csv", row.names = FALSE)
